@@ -1,0 +1,5 @@
+## Guidelines to always follow when making changes
+
+- Don't use a crazy number of emojis.
+- For reference to any database schemas, refer to the database directory.
+- If any instructions are unclear on implementation details, do not make the change and request clarity from the user.
