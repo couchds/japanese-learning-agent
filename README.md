@@ -33,6 +33,15 @@ python scripts/create_db.py --drop
 python scripts/setup_db.py
 ```
 
+## Frontend
+
+```bash
+cd frontend
+npm start
+```
+
+Runs the React app on http://localhost:3000
+
 ## Usage
 
 TODO
