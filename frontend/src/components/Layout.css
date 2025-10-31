@@ -39,6 +39,51 @@
   background-color: #34495e;
 }
 
+.expandable-item {
+  margin-bottom: 0 !important;
+}
+
+.expandable-header {
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+  user-select: none;
+}
+
+.expandable-header:hover {
+  background-color: #34495e;
+}
+
+.expandable-header .arrow {
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.expandable-header .arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.submenu {
+  list-style: none;
+  padding: 0;
+  margin: 5px 0 0 0;
+  padding-left: 15px;
+}
+
+.submenu li {
+  margin-bottom: 5px;
+}
+
+.submenu a {
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
 .content {
   flex: 1;
   padding: 30px;

@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import kanjiRoutes from './routes/kanji';
+import wordsRoutes from './routes/words';
 
 dotenv.config({ path: '../.env' });
 
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/kanji', kanjiRoutes);
+app.use('/api/words', wordsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

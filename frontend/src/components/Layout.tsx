@@ -1,8 +1,17 @@
-import React from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import './Layout.css';
 
 const Layout: React.FC = () => {
+  const location = useLocation();
+  const [isDictionaryExpanded, setIsDictionaryExpanded] = useState(
+    location.pathname === '/kanji' || location.pathname === '/words'
+  );
+
+  const toggleDictionary = () => {
+    setIsDictionaryExpanded(!isDictionaryExpanded);
+  };
+
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -12,8 +21,21 @@ const Layout: React.FC = () => {
             <li>
               <Link to="/">Home</Link>
             </li>
-            <li>
-              <Link to="/kanji">Kanji</Link>
+            <li className="expandable-item">
+              <div className="expandable-header" onClick={toggleDictionary}>
+                <span>Dictionary</span>
+                <span className={`arrow ${isDictionaryExpanded ? 'expanded' : ''}`}>▶</span>
+              </div>
+              {isDictionaryExpanded && (
+                <ul className="submenu">
+                  <li>
+                    <Link to="/words">Word Dictionary</Link>
+                  </li>
+                  <li>
+                    <Link to="/kanji">Kanji Dictionary</Link>
+                  </li>
+                </ul>
+              )}
             </li>
           </ul>
         </nav>
