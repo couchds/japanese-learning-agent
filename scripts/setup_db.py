@@ -223,8 +223,9 @@ def main():
     # Parse XML
     kanji_list = parse_kanjidic2(xml_path)
     
+    # NOTE: Schema creation is now handled by Prisma migrations
     # Create schema
-    create_database(db_params, schema_path)
+    # create_database(db_params, schema_path)  # DISABLED - Use Prisma instead
     
     # Populate
     populate_database(db_params, kanji_list)

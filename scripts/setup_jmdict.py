@@ -416,8 +416,9 @@ def main():
         'port': args.port or os.getenv('PGPORT', '5432')
     }
     
+    # NOTE: Schema creation is now handled by Prisma migrations
     # Create schema
-    create_jmdict_schema(db_params, schema_path)
+    # create_jmdict_schema(db_params, schema_path)  # DISABLED - Use Prisma instead
     
     # Load kanji map for linking
     kanji_map = load_kanji_map(db_params)

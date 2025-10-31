@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model dictionary_entries {
+  id             Int              @id @default(autoincrement())
+  entry_id       Int              @unique
+  created_at     DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?        @default(now()) @db.Timestamp(6)
+  entry_kanji    entry_kanji[]
+  entry_readings entry_readings[]
+  entry_senses   entry_senses[]
+}
+
+model entry_cross_references {
+  id           Int          @id @default(autoincrement())
+  sense_id     Int
+  xref_text    String
+  xref_type    String?      @db.VarChar(50)
+  entry_senses entry_senses @relation(fields: [sense_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model entry_kanji {
+  id                     Int                      @id @default(autoincrement())
+  entry_id               Int
+  kanji                  String
+  is_common              Boolean?                 @default(false)
+  priority_tags          String[]
+  info                   String[]
+  kanji_order            Int
+  dictionary_entries     dictionary_entries       @relation(fields: [entry_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  entry_kanji_characters entry_kanji_characters[]
+
+  @@unique([entry_id, kanji_order])
+  @@index([is_common], map: "idx_entry_kanji_common")
+  @@index([entry_id], map: "idx_entry_kanji_entry_id")
+  @@index([kanji], map: "idx_entry_kanji_kanji")
+}
+
+model entry_kanji_characters {
+  id             Int         @id @default(autoincrement())
+  entry_kanji_id Int
+  kanji_id       Int
+  position       Int
+  entry_kanji    entry_kanji @relation(fields: [entry_kanji_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  kanji          kanji       @relation(fields: [kanji_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([entry_kanji_id, position])
+  @@index([entry_kanji_id], map: "idx_entry_kanji_characters_entry_kanji_id")
+  @@index([kanji_id], map: "idx_entry_kanji_characters_kanji_id")
+}
+
+model entry_readings {
+  id                 Int                @id @default(autoincrement())
+  entry_id           Int
+  reading            String
+  is_common          Boolean?           @default(false)
+  priority_tags      String[]
+  info               String[]
+  reading_order      Int
+  dictionary_entries dictionary_entries @relation(fields: [entry_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([entry_id, reading_order])
+  @@index([is_common], map: "idx_entry_readings_common")
+  @@index([entry_id], map: "idx_entry_readings_entry_id")
+  @@index([reading], map: "idx_entry_readings_reading")
+}
+
+model entry_senses {
+  id                     Int                      @id @default(autoincrement())
+  entry_id               Int
+  sense_order            Int
+  parts_of_speech        String[]
+  fields                 String[]
+  misc                   String[]
+  dialects               String[]
+  entry_cross_references entry_cross_references[]
+  dictionary_entries     dictionary_entries       @relation(fields: [entry_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sense_glosses          sense_glosses[]
+
+  @@unique([entry_id, sense_order])
+  @@index([entry_id], map: "idx_entry_senses_entry_id")
+  @@index([parts_of_speech], map: "idx_entry_senses_pos", type: Gin)
+}
+
+model kanji {
+  id                     Int                      @id @default(autoincrement())
+  literal                String                   @unique @db.VarChar(10)
+  unicode_codepoint      String?                  @db.VarChar(10)
+  classical_radical      Int?
+  stroke_count           Int
+  grade                  Int?
+  frequency_rank         Int?
+  jlpt_level             Int?
+  on_readings            String[]
+  kun_readings           String[]
+  nanori_readings        String[]
+  created_at             DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamp(6)
+  entry_kanji_characters entry_kanji_characters[]
+  kanji_meanings         kanji_meanings[]
+
+  @@index([frequency_rank], map: "idx_kanji_frequency")
+  @@index([grade], map: "idx_kanji_grade")
+  @@index([jlpt_level], map: "idx_kanji_jlpt")
+  @@index([literal], map: "idx_kanji_literal")
+  @@index([classical_radical], map: "idx_kanji_radical")
+  @@index([stroke_count], map: "idx_kanji_stroke_count")
+  @@index([unicode_codepoint], map: "idx_kanji_unicode")
+}
+
+model kanji_meanings {
+  id            Int    @id @default(autoincrement())
+  kanji_id      Int
+  meaning       String
+  meaning_order Int
+  kanji         kanji  @relation(fields: [kanji_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([kanji_id, meaning_order])
+  @@index([kanji_id], map: "idx_kanji_meanings_kanji_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model resources {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  name             String    @db.VarChar(500)
+  type             String    @db.VarChar(50)
+  status           String    @default("not_started") @db.VarChar(50)
+  description      String?
+  image_path       String?   @db.VarChar(1000)
+  difficulty_level String?   @db.VarChar(50)
+  tags             String[]
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+  users            users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([difficulty_level], map: "idx_resources_difficulty")
+  @@index([status], map: "idx_resources_status")
+  @@index([tags], map: "idx_resources_tags", type: Gin)
+  @@index([type], map: "idx_resources_type")
+  @@index([user_id], map: "idx_resources_user_id")
+}
+
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model sense_glosses {
+  id           Int          @id @default(autoincrement())
+  sense_id     Int
+  gloss        String
+  gloss_type   String?      @db.VarChar(50)
+  gloss_order  Int
+  entry_senses entry_senses @relation(fields: [sense_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sense_id, gloss_order])
+  @@index([sense_id], map: "idx_sense_glosses_sense_id")
+}
+
+model users {
+  id            Int         @id @default(autoincrement())
+  username      String      @unique @db.VarChar(255)
+  email         String?     @unique @db.VarChar(255)
+  password_hash String      @db.VarChar(255)
+  created_at    DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?   @default(now()) @db.Timestamp(6)
+  resources     resources[]
+
+  @@index([email], map: "idx_users_email")
+  @@index([username], map: "idx_users_username")
+}
