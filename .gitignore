@@ -4,9 +4,10 @@ venv
 
 .env
 
-# Frontend
+# Frontend & Backend
 node_modules
 /frontend/build
+/backend/dist
 /frontend/.env.local
 /frontend/.env.development.local
 /frontend/.env.test.local

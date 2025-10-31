@@ -33,10 +33,26 @@ python scripts/create_db.py --drop
 python scripts/setup_db.py
 ```
 
+## Backend API
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Runs the Express API on http://localhost:3001
+
+**API Endpoints:**
+- `GET /api/kanji` - Get all kanji (supports ?grade=X, ?jlpt=X, ?limit=X, ?offset=X)
+- `GET /api/kanji/:id` - Get a single kanji by ID
+- `GET /health` - Health check
+
 ## Frontend
 
 ```bash
 cd frontend
+npm install
 npm start
 ```
 
