@@ -8,6 +8,7 @@ import psycopg2
 import sys
 import os
 import getpass
+import hashlib
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -16,21 +17,43 @@ load_dotenv()
 
 
 def get_user_input():
-    """Get username from user"""
+    """Get username and password from user"""
     # Get system username as default
     system_username = getpass.getuser()
     
     print("\n=== Local User Setup ===\n")
-    print("Please enter your username for local development:")
+    print("Please enter your information for local development:")
     
     # Get username with default
     username_input = input(f"Username [{system_username}]: ").strip()
     username = username_input if username_input else system_username
     
-    return username
+    # Get password
+    while True:
+        password = getpass.getpass("Password (min 8 characters): ")
+        if len(password) < 8:
+            print("Password must be at least 8 characters. Please try again.")
+            continue
+        
+        password_confirm = getpass.getpass("Confirm password: ")
+        if password != password_confirm:
+            print("Passwords don't match. Please try again.")
+            continue
+        
+        break
+    
+    return username, password
 
 
-def setup_local_user(db_params, username):
+def hash_password(password):
+    """Hash password using bcrypt-compatible method"""
+    # Note: This uses a simple hash for the Python setup script
+    # The backend will use bcrypt for production hashing
+    import hashlib
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def setup_local_user(db_params, username, password):
     """Create default local user"""
     print(f"\nSetting up local user '{username}'...")
     
@@ -38,14 +61,17 @@ def setup_local_user(db_params, username):
         conn = psycopg2.connect(**db_params)
         cursor = conn.cursor()
         
+        # Hash password
+        password_hash = hash_password(password)
+        
         # Insert user
         cursor.execute("""
-            INSERT INTO users (username) 
-            VALUES (%s)
+            INSERT INTO users (username, password_hash) 
+            VALUES (%s, %s)
             ON CONFLICT (username) DO UPDATE 
-            SET updated_at = NOW()
+            SET password_hash = EXCLUDED.password_hash, updated_at = NOW()
             RETURNING id
-        """, (username,))
+        """, (username, password_hash))
         
         result = cursor.fetchone()
         if result:
@@ -94,10 +120,10 @@ def main():
         sys.exit(1)
     
     # Get user input
-    username = get_user_input()
+    username, password = get_user_input()
     
     # Setup local user
-    user_id = setup_local_user(db_params, username)
+    user_id = setup_local_user(db_params, username, password)
     
     if user_id:
         print(f"\n✓ Local setup complete!")

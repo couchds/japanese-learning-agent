@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import kanjiRoutes from './routes/kanji';
 import wordsRoutes from './routes/words';
+import authRoutes from './routes/auth';
+import { authenticateToken } from './middleware/auth';
 
 dotenv.config({ path: '../.env' });
 
@@ -13,9 +15,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/kanji', kanjiRoutes);
-app.use('/api/words', wordsRoutes);
+// Public routes
+app.use('/api/auth', authRoutes);
+
+// Protected routes
+app.use('/api/kanji', authenticateToken, kanjiRoutes);
+app.use('/api/words', authenticateToken, wordsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Layout.css';
 
 const Layout: React.FC = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [isDictionaryExpanded, setIsDictionaryExpanded] = useState(
     location.pathname === '/kanji' || location.pathname === '/words'
   );
@@ -39,6 +41,15 @@ const Layout: React.FC = () => {
             </li>
           </ul>
         </nav>
+        
+        <div className="user-section">
+          <div className="user-info">
+            <span className="username">{user?.username}</span>
+          </div>
+          <button className="logout-button" onClick={logout}>
+            Logout
+          </button>
+        </div>
       </aside>
       <main className="content">
         <Outlet />
