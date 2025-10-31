@@ -39,6 +39,9 @@ const Layout: React.FC = () => {
                 </ul>
               )}
             </li>
+            <li>
+              <Link to="/resources">Resources</Link>
+            </li>
           </ul>
         </nav>
         

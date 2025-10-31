@@ -19,3 +19,7 @@ yarn-error.log*
 
 # Prisma
 /backend/src/generated
+
+# Uploads
+/backend/uploads/*
+!/backend/uploads/.gitkeep

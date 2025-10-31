@@ -6,6 +6,7 @@ import Layout from './components/Layout';
 import Home from './pages/Home';
 import Kanji from './pages/Kanji';
 import Words from './pages/Words';
+import Resources from './pages/Resources';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import './App.css';
@@ -24,6 +25,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="words" element={<Words />} />
             <Route path="kanji" element={<Kanji />} />
+            <Route path="resources" element={<Resources />} />
           </Route>
         </Routes>
       </AuthProvider>
