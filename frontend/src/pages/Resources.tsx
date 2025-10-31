@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Resources.css';
 
@@ -15,6 +16,7 @@ interface Resource {
 
 const Resources: React.FC = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -309,7 +311,11 @@ const Resources: React.FC = () => {
             {resources.map((resource) => (
               <div key={resource.id} className="resource-card">
                 {(resource as any).image_path && (
-                  <div className="resource-image">
+                  <div 
+                    className="resource-image"
+                    onClick={() => navigate(`/resources/${resource.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <img 
                       src={`http://localhost:3001${(resource as any).image_path}`} 
                       alt={resource.name}
@@ -321,10 +327,18 @@ const Resources: React.FC = () => {
                 )}
                 
                 <div className="resource-header">
-                  <h3>{resource.name}</h3>
+                  <h3 
+                    onClick={() => navigate(`/resources/${resource.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {resource.name}
+                  </h3>
                   <button 
                     className="delete-btn"
-                    onClick={() => handleDelete(resource.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(resource.id);
+                    }}
                     title="Delete resource"
                   >
                     ×
