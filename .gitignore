@@ -1,5 +1,18 @@
 kanjidic2.xml*
+JMdict_e*
 
 venv
 
 .env
+
+# Frontend & Backend
+node_modules
+/frontend/build
+/backend/dist
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

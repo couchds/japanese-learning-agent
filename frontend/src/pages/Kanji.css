@@ -1,0 +1,193 @@
+.kanji-page {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.kanji-page h1 {
+  margin-top: 0;
+  margin-bottom: 30px;
+  color: #2c3e50;
+}
+
+.search-bar {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.search-results {
+  color: #666;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.loading,
+.error {
+  text-align: center;
+  padding: 40px;
+  font-size: 18px;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+.table-container {
+  overflow-x: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.kanji-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.kanji-table thead {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.kanji-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.kanji-table tbody tr {
+  border-bottom: 1px solid #dee2e6;
+  transition: background-color 0.2s;
+}
+
+.kanji-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.kanji-table td {
+  padding: 12px 16px;
+}
+
+.kanji-character {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  width: 80px;
+}
+
+.meanings {
+  max-width: 400px;
+  color: #2c3e50;
+}
+
+.readings {
+  font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+  color: #555;
+}
+
+.frequency {
+  text-align: center;
+  font-weight: 500;
+  color: #666;
+  width: 100px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s;
+  min-width: 40px;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #f0f0f0;
+  border-color: #3498db;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination button.active {
+  background-color: #3498db;
+  color: white;
+  border-color: #3498db;
+  font-weight: bold;
+}
+
+.pagination span {
+  padding: 8px 4px;
+  color: #999;
+}
+
+.page-info {
+  text-align: center;
+  margin-top: 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .kanji-page {
+    padding: 0 10px;
+  }
+
+  .kanji-table {
+    font-size: 12px;
+  }
+
+  .kanji-table th,
+  .kanji-table td {
+    padding: 8px 10px;
+  }
+
+  .kanji-character {
+    font-size: 20px;
+    width: 60px;
+  }
+
+  .meanings {
+    max-width: 200px;
+  }
+
+  .pagination button {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 32px;
+  }
+}
+

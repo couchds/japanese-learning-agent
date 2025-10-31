@@ -44,6 +44,16 @@ def create_database(db_name='japanese_learning', drop_existing=False, db_user=No
         if exists:
             if drop_existing:
                 print(f"Dropping existing database '{db_name}'...")
+                
+                # Terminate all connections to the database
+                print(f"Terminating active connections to '{db_name}'...")
+                cursor.execute(f"""
+                    SELECT pg_terminate_backend(pg_stat_activity.pid)
+                    FROM pg_stat_activity
+                    WHERE pg_stat_activity.datname = '{db_name}'
+                    AND pid <> pg_backend_pid()
+                """)
+                
                 cursor.execute(f'DROP DATABASE {db_name}')
                 print(f"Creating database '{db_name}'...")
                 cursor.execute(f'CREATE DATABASE {db_name}')
