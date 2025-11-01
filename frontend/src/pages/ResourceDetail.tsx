@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import * as wanakana from 'wanakana';
 import './ResourceDetail.css';
 
 interface KanjiMeaning {
@@ -67,6 +68,8 @@ interface SearchWordResult {
   readings: string[];
   glosses: string[];
   parts_of_speech: string[];
+  is_common: boolean;
+  frequency_score: number;
 }
 
 const ResourceDetail: React.FC = () => {
@@ -96,6 +99,42 @@ const ResourceDetail: React.FC = () => {
     }
   }, [token, id]);
 
+  // Real-time kanji search with debouncing
+  useEffect(() => {
+    if (!showKanjiSearch || !token) {
+      return;
+    }
+
+    if (!kanjiSearchQuery.trim()) {
+      setKanjiSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      searchKanji();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [kanjiSearchQuery, showKanjiSearch, token]);
+
+  // Real-time word search with debouncing
+  useEffect(() => {
+    if (!showWordSearch || !token) {
+      return;
+    }
+
+    if (!wordSearchQuery.trim()) {
+      setWordSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      searchWords();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [wordSearchQuery, showWordSearch, token]);
+
   const fetchResource = async () => {
     try {
       setLoading(true);
@@ -123,6 +162,13 @@ const ResourceDetail: React.FC = () => {
 
     try {
       setSearchLoading(true);
+      
+      // Convert romaji to both hiragana and katakana for comprehensive search
+      // On-readings are typically in katakana, kun-readings in hiragana
+      const searchHiragana = wanakana.toHiragana(kanjiSearchQuery);
+      const searchKatakana = wanakana.toKatakana(kanjiSearchQuery);
+      
+      // Try with original input first (for literal character or English meaning search)
       const response = await fetch(`http://localhost:3001/api/kanji?search=${encodeURIComponent(kanjiSearchQuery)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -133,8 +179,36 @@ const ResourceDetail: React.FC = () => {
         throw new Error('Failed to search kanji');
       }
 
-      const data = await response.json();
-      setKanjiSearchResults(data.kanji || []);
+      let allResults = await response.json();
+      let kanjiResults = allResults.kanji || [];
+
+      // If romaji was converted to different kana, also search with those
+      if (searchKatakana !== kanjiSearchQuery && kanjiResults.length === 0) {
+        const katakanaResponse = await fetch(`http://localhost:3001/api/kanji?search=${encodeURIComponent(searchKatakana)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (katakanaResponse.ok) {
+          const katakanaData = await katakanaResponse.json();
+          kanjiResults = katakanaData.kanji || [];
+        }
+      }
+
+      // If still no results and hiragana is different, try that too
+      if (searchHiragana !== kanjiSearchQuery && searchHiragana !== searchKatakana && kanjiResults.length === 0) {
+        const hiraganaResponse = await fetch(`http://localhost:3001/api/kanji?search=${encodeURIComponent(searchHiragana)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (hiraganaResponse.ok) {
+          const hiraganaData = await hiraganaResponse.json();
+          kanjiResults = hiraganaData.kanji || [];
+        }
+      }
+
+      setKanjiSearchResults(kanjiResults);
     } catch (err) {
       console.error('Error searching kanji:', err);
     } finally {
@@ -147,7 +221,14 @@ const ResourceDetail: React.FC = () => {
 
     try {
       setSearchLoading(true);
-      const response = await fetch(`http://localhost:3001/api/words?search=${encodeURIComponent(wordSearchQuery)}&limit=20`, {
+      
+      // Convert romaji to hiragana for better matching with database readings
+      const searchHiragana = wanakana.toHiragana(wordSearchQuery);
+      
+      // Use hiragana version for search if conversion happened, otherwise use original
+      const searchTerm = searchHiragana !== wordSearchQuery ? searchHiragana : wordSearchQuery;
+      
+      const response = await fetch(`http://localhost:3001/api/words?search=${encodeURIComponent(searchTerm)}&limit=20`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -386,11 +467,8 @@ const ResourceDetail: React.FC = () => {
                 placeholder="Search kanji by character or meaning..."
                 value={kanjiSearchQuery}
                 onChange={(e) => setKanjiSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && searchKanji()}
               />
-              <button onClick={searchKanji} disabled={searchLoading}>
-                {searchLoading ? 'Searching...' : 'Search'}
-              </button>
+              {searchLoading && <span className="search-loading">Searching...</span>}
             </div>
 
             {kanjiSearchResults.length > 0 && (
@@ -399,10 +477,10 @@ const ResourceDetail: React.FC = () => {
                   <div key={kanji.id} className="search-result-item">
                     <div className="result-content">
                       <span className="kanji-literal">{kanji.literal}</span>
-                      <span className="kanji-meanings">{kanji.meanings.join(', ')}</span>
+                      <span className="kanji-meanings">{kanji.meanings?.join(', ') || 'No meanings'}</span>
                       <span className="kanji-readings">
-                        {kanji.on_readings.length > 0 && `On: ${kanji.on_readings.join(', ')}`}
-                        {kanji.kun_readings.length > 0 && ` | Kun: ${kanji.kun_readings.join(', ')}`}
+                        {kanji.on_readings?.length > 0 && `On: ${kanji.on_readings.join(', ')}`}
+                        {kanji.kun_readings?.length > 0 && ` | Kun: ${kanji.kun_readings.join(', ')}`}
                       </span>
                     </div>
                     <div className="result-actions">
@@ -491,11 +569,8 @@ const ResourceDetail: React.FC = () => {
                 placeholder="Search words..."
                 value={wordSearchQuery}
                 onChange={(e) => setWordSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && searchWords()}
               />
-              <button onClick={searchWords} disabled={searchLoading}>
-                {searchLoading ? 'Searching...' : 'Search'}
-              </button>
+              {searchLoading && <span className="search-loading">Searching...</span>}
             </div>
 
             {wordSearchResults.length > 0 && (
@@ -507,9 +582,9 @@ const ResourceDetail: React.FC = () => {
                         {word.kanji_forms && word.kanji_forms.length > 0 && (
                           <span className="kanji-forms">{word.kanji_forms.join(', ')}</span>
                         )}
-                        <span className="readings">{word.readings.join(', ')}</span>
+                        <span className="readings">{word.readings?.join(', ') || 'No readings'}</span>
                       </div>
-                      <span className="glosses">{word.glosses.slice(0, 3).join('; ')}</span>
+                      <span className="glosses">{word.glosses?.slice(0, 3).join('; ') || 'No definition'}</span>
                     </div>
                     <div className="result-actions">
                       <input

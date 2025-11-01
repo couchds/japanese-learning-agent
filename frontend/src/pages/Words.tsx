@@ -11,6 +11,7 @@ interface WordData {
   glosses: string[] | null;
   parts_of_speech: string[] | null;
   is_common: boolean;
+  frequency_score: number;
 }
 
 const Words: React.FC = () => {

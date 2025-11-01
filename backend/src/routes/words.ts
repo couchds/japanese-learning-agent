@@ -14,18 +14,41 @@ router.get('/', async (req: Request, res: Response) => {
         de.entry_id,
         ARRAY_AGG(DISTINCT ek.kanji) FILTER (WHERE ek.kanji IS NOT NULL) as kanji_forms,
         ARRAY_AGG(DISTINCT er.reading) FILTER (WHERE er.reading IS NOT NULL) as readings,
-        ARRAY_AGG(DISTINCT sg.gloss) FILTER (WHERE sg.gloss IS NOT NULL) as glosses,
+        ARRAY(
+          SELECT sg.gloss
+          FROM entry_senses es_inner
+          JOIN sense_glosses sg ON es_inner.id = sg.sense_id
+          WHERE es_inner.entry_id = de.id
+          ORDER BY es_inner.sense_order, sg.gloss_order
+        ) as glosses,
         ARRAY(
           SELECT DISTINCT pos
           FROM entry_senses es2, unnest(es2.parts_of_speech) pos
           WHERE es2.entry_id = de.id
         ) as parts_of_speech,
-        BOOL_OR(COALESCE(ek.is_common, false) OR COALESCE(er.is_common, false)) as is_common
+        BOOL_OR(COALESCE(ek.is_common, false) OR COALESCE(er.is_common, false)) as is_common,
+        -- Compute frequency score (lower = more common)
+        -- nf* tags: nf01 (most common) to nf48 (less common)
+        -- Other priority tags get higher scores
+        MIN(
+          CASE 
+            -- Extract nf* number if present (nf01 -> 1, nf48 -> 48)
+            WHEN tag ~ '^nf[0-9]{2}$' THEN SUBSTRING(tag FROM 3)::INTEGER
+            -- High priority non-nf tags
+            WHEN tag IN ('news1', 'ichi1', 'spec1', 'gai1') THEN 50
+            WHEN tag IN ('news2', 'ichi2', 'spec2', 'gai2') THEN 100
+            -- No priority tag
+            ELSE 999
+          END
+        ) as frequency_score
       FROM dictionary_entries de
       LEFT JOIN entry_kanji ek ON de.id = ek.entry_id
       LEFT JOIN entry_readings er ON de.id = er.entry_id
       LEFT JOIN entry_senses es ON de.id = es.entry_id
       LEFT JOIN sense_glosses sg ON es.id = sg.sense_id
+      LEFT JOIN LATERAL (
+        SELECT unnest(COALESCE(ek.priority_tags, ARRAY[]::text[]) || COALESCE(er.priority_tags, ARRAY[]::text[])) as tag
+      ) tags ON true
     `;
 
     const conditions: string[] = [];
@@ -48,7 +71,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     query += `
       GROUP BY de.id, de.entry_id
-      ORDER BY is_common DESC, de.entry_id
+      ORDER BY frequency_score ASC, is_common DESC, de.entry_id
       LIMIT $${paramCount++} OFFSET $${paramCount++}
     `;
 
@@ -77,17 +100,35 @@ router.get('/:id', async (req: Request, res: Response) => {
         de.entry_id,
         ARRAY_AGG(DISTINCT ek.kanji) FILTER (WHERE ek.kanji IS NOT NULL) as kanji_forms,
         ARRAY_AGG(DISTINCT er.reading) FILTER (WHERE er.reading IS NOT NULL) as readings,
-        ARRAY_AGG(DISTINCT sg.gloss) FILTER (WHERE sg.gloss IS NOT NULL) as glosses,
+        ARRAY(
+          SELECT sg.gloss
+          FROM entry_senses es_inner
+          JOIN sense_glosses sg ON es_inner.id = sg.sense_id
+          WHERE es_inner.entry_id = de.id
+          ORDER BY es_inner.sense_order, sg.gloss_order
+        ) as glosses,
         ARRAY(
           SELECT DISTINCT pos
           FROM entry_senses es2, unnest(es2.parts_of_speech) pos
           WHERE es2.entry_id = de.id
-        ) as parts_of_speech
+        ) as parts_of_speech,
+        BOOL_OR(COALESCE(ek.is_common, false) OR COALESCE(er.is_common, false)) as is_common,
+        MIN(
+          CASE 
+            WHEN tag ~ '^nf[0-9]{2}$' THEN SUBSTRING(tag FROM 3)::INTEGER
+            WHEN tag IN ('news1', 'ichi1', 'spec1', 'gai1') THEN 50
+            WHEN tag IN ('news2', 'ichi2', 'spec2', 'gai2') THEN 100
+            ELSE 999
+          END
+        ) as frequency_score
       FROM dictionary_entries de
       LEFT JOIN entry_kanji ek ON de.id = ek.entry_id
       LEFT JOIN entry_readings er ON de.id = er.entry_id
       LEFT JOIN entry_senses es ON de.id = es.entry_id
       LEFT JOIN sense_glosses sg ON es.id = sg.sense_id
+      LEFT JOIN LATERAL (
+        SELECT unnest(COALESCE(ek.priority_tags, ARRAY[]::text[]) || COALESCE(er.priority_tags, ARRAY[]::text[])) as tag
+      ) tags ON true
       WHERE de.id = $1
       GROUP BY de.id, de.entry_id
     `;
