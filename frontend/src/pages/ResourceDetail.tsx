@@ -241,6 +241,13 @@ const ResourceDetail: React.FC = () => {
     }
   };
 
+  const formatLabel = (text: string): string => {
+    return text
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   if (loading) {
     return <div className="loading">Loading resource...</div>;
   }
@@ -256,33 +263,30 @@ const ResourceDetail: React.FC = () => {
 
   return (
     <div className="resource-detail-page">
-      <div className="detail-header">
-        <button onClick={() => navigate('/resources')} className="back-button">
-          ← Back to Resources
-        </button>
-        <h1>{resource.name}</h1>
-      </div>
+      <button onClick={() => navigate('/resources')} className="back-button">
+        ← Back to Resources
+      </button>
 
-      <div className="resource-info">
+      <div className="resource-header-section">
         {resource.image_path && (
           <img 
             src={`http://localhost:3001${resource.image_path}`} 
             alt={resource.name}
-            className="resource-detail-image"
+            className="resource-header-image"
           />
         )}
-        <div className="info-grid">
-          <div className="info-item">
-            <strong>Type:</strong> {resource.type}
-          </div>
-          <div className="info-item">
-            <strong>Status:</strong> {resource.status}
-          </div>
+        <h1 className="resource-title">{resource.name}</h1>
+        <div className="resource-tags">
+          <span className="resource-tag type-tag">{formatLabel(resource.type)}</span>
+          <span className="resource-tag status-tag">{formatLabel(resource.status)}</span>
           {resource.difficulty_level && (
-            <div className="info-item">
-              <strong>Difficulty:</strong> {resource.difficulty_level}
-            </div>
+            <span className="resource-tag difficulty-tag">{formatLabel(resource.difficulty_level)}</span>
           )}
+        </div>
+      </div>
+
+      {(resource.description || (resource.tags && resource.tags.length > 0)) && (
+        <div className="resource-info">
           {resource.description && (
             <div className="info-item full-width">
               <strong>Description:</strong> {resource.description}
@@ -294,7 +298,7 @@ const ResourceDetail: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+      )}
 
       <div className="vocabulary-section">
         <div className="section-header">

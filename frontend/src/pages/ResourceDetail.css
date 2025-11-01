@@ -4,10 +4,6 @@
   padding: 20px;
 }
 
-.detail-header {
-  margin-bottom: 30px;
-}
-
 .back-button {
   padding: 8px 16px;
   background-color: #ecf0f1;
@@ -15,7 +11,7 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   transition: background-color 0.2s;
 }
 
@@ -23,9 +19,60 @@
   background-color: #d5d8dc;
 }
 
-.detail-header h1 {
+.resource-header-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.resource-header-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.resource-title {
+  flex: 1;
   margin: 0;
   color: #2c3e50;
+  font-size: 28px;
+}
+
+.resource-tags {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.resource-tag {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.type-tag {
+  background-color: #667eea;
+  color: white;
+}
+
+.status-tag {
+  background-color: #48bb78;
+  color: white;
+}
+
+.difficulty-tag {
+  background-color: #ed8936;
+  color: white;
 }
 
 .resource-info {
@@ -34,14 +81,6 @@
   padding: 20px;
   margin-bottom: 30px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.resource-detail-image {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
-  border-radius: 8px;
-  margin-bottom: 20px;
 }
 
 .info-grid {
@@ -388,6 +427,27 @@
 }
 
 @media (max-width: 768px) {
+  .resource-header-section {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .resource-header-image {
+    width: 100px;
+    height: 100px;
+  }
+
+  .resource-title {
+    font-size: 24px;
+  }
+
+  .resource-tags {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
   .vocabulary-card {
     flex-direction: column;
     align-items: flex-start;
