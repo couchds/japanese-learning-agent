@@ -4,9 +4,31 @@ import { useAuth } from '../context/AuthContext';
 import * as wanakana from 'wanakana';
 import './ResourceDetail.css';
 
+interface EntryKanji {
+  kanji: string;
+  is_common?: boolean;
+}
+
+interface EntryReading {
+  reading: string;
+  is_common?: boolean;
+}
+
+interface SenseGloss {
+  gloss: string;
+}
+
+interface EntrySense {
+  sense_glosses: SenseGloss[];
+  parts_of_speech?: string[];
+}
+
 interface DictionaryEntry {
   id: number;
   entry_id: number;
+  entry_kanji: EntryKanji[];
+  entry_readings: EntryReading[];
+  entry_senses: EntrySense[];
 }
 
 interface ResourceWord {
@@ -360,33 +382,47 @@ const ResourceDetail: React.FC = () => {
         )}
 
         <div className="vocabulary-list">
-          {resource.resource_words.map((rw) => (
-            <div key={rw.id} className="vocabulary-card">
-              <div className="vocab-main">
-                <div className="vocab-details">
-                  <div className="word-entry-id">Entry ID: {rw.entry_id}</div>
-                  {rw.notes && <div className="notes">{rw.notes}</div>}
+          {resource.resource_words.map((rw) => {
+            const entry = rw.dictionary_entries;
+            const kanjiForm = entry.entry_kanji?.[0]?.kanji || '';
+            const reading = entry.entry_readings?.[0]?.reading || '';
+            const glosses = entry.entry_senses?.[0]?.sense_glosses?.slice(0, 3).map(g => g.gloss).join('; ') || '';
+            
+            return (
+              <div key={rw.id} className="vocabulary-card">
+                <div className="vocab-main">
+                  <div className="vocab-details">
+                    <div className="word-forms">
+                      {kanjiForm && <span className="kanji-forms">{kanjiForm}</span>}
+                      {reading && <span className="readings">{reading}</span>}
+                    </div>
+                    {glosses && <div className="glosses">{glosses}</div>}
+                    {!kanjiForm && !reading && (
+                      <div className="word-entry-id">Entry ID: {rw.entry_id} (dictionary data not loaded)</div>
+                    )}
+                    {rw.notes && <div className="notes">{rw.notes}</div>}
+                  </div>
+                </div>
+                <div className="vocab-meta">
+                  <input
+                    type="number"
+                    min="0"
+                    value={rw.frequency}
+                    onChange={(e) => updateWordFrequency(rw.entry_id, parseInt(e.target.value) || 0)}
+                    className="frequency-input"
+                    title="Frequency"
+                  />
+                  <button 
+                    onClick={() => removeWord(rw.entry_id)} 
+                    className="remove-button"
+                    title="Remove"
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
-              <div className="vocab-meta">
-                <input
-                  type="number"
-                  min="0"
-                  value={rw.frequency}
-                  onChange={(e) => updateWordFrequency(rw.entry_id, parseInt(e.target.value) || 0)}
-                  className="frequency-input"
-                  title="Frequency"
-                />
-                <button 
-                  onClick={() => removeWord(rw.entry_id)} 
-                  className="remove-button"
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           {resource.resource_words.length === 0 && (
             <p className="empty-message">No words added yet. Click "+ Add Word" to get started!</p>
           )}

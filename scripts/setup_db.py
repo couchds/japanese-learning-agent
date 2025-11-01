@@ -200,15 +200,10 @@ def main():
     # Paths
     project_root = Path(__file__).parent.parent
     xml_path = project_root / 'kanjidic2.xml'
-    schema_path = project_root / 'database' / 'kanji_schema.sql'
     
     if not xml_path.exists():
         print(f"Error: {xml_path} not found")
         print("Download from: https://www.edrdg.org/kanjidic/kanjd2index_legacy.html")
-        sys.exit(1)
-    
-    if not schema_path.exists():
-        print(f"Error: {schema_path} not found")
         sys.exit(1)
     
     # Database connection params

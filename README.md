@@ -3,7 +3,10 @@
 ## Setup
 
 ### Prerequisites
-- PostgreSQL
+- **PostgreSQL** 12 or higher
+- **Node.js** 16 or higher
+- **Python** 3.8 or higher
+- **npm** or **yarn** package manager
 
 ### Data Sources
 
@@ -76,7 +79,7 @@ entry_kanji_characters
   └── position (position in word)
 ```
 
-**Resources Table (user learning materials):**
+**Resources Tables (user learning materials):**
 ```
 resources
   ├── id
@@ -89,11 +92,27 @@ resources
   ├── difficulty_level (beginner, intermediate, advanced)
   ├── tags (array)
   └── created_at, updated_at
+
+resource_kanji (links resources to kanji)
+  ├── resource_id → resources.id
+  ├── kanji_id → kanji.id
+  ├── frequency (how often it appears)
+  ├── notes (optional)
+  └── created_at, updated_at
+
+resource_words (links resources to dictionary words)
+  ├── resource_id → resources.id
+  ├── entry_id → dictionary_entries.id
+  ├── frequency (how often it appears)
+  ├── notes (optional)
+  └── created_at, updated_at
 ```
 
 ### Database Setup
 
-Note your .env must be configured with a user with the CREATEDB permission.
+**Database Management:** This project uses **Prisma** as the ORM for managing database schemas and migrations. The schema is defined in `backend/prisma/schema.prisma`.
+
+**Note:** Your `.env` must be configured with a PostgreSQL user with the CREATEDB permission.
 
 ```bash
 # Install Python dependencies
@@ -103,11 +122,17 @@ pip install -r requirements.txt
 cp env.example .env
 # Edit .env with your PostgreSQL credentials
 
+# Also create .env in backend directory for Prisma
+cp env.example backend/.env
+# Or manually create backend/.env with DATABASE_URL
+
 # 1. Create database
 python scripts/create_db.py
 
-# 2. Setup all schemas (users, kanji, dictionary, resources)
-python scripts/setup_schemas.py
+# 2. Apply Prisma migrations to create schema
+cd backend
+npx prisma migrate deploy
+cd ..
 
 # 3. Setup kanji data from kanjidic2.xml
 python scripts/setup_db.py
@@ -121,16 +146,10 @@ python scripts/setup_local.py
 
 # To recreate database from scratch
 python scripts/create_db.py --drop
-python scripts/setup_schemas.py
+cd backend && npx prisma migrate deploy && cd ..
 python scripts/setup_db.py
 python scripts/setup_jmdict.py
 python scripts/setup_local.py
-```
-
-**Optional: Setup specific schemas only**
-```bash
-# Setup only users and resources tables
-python scripts/setup_schemas.py --schemas users resources
 ```
 
 ## Backend API

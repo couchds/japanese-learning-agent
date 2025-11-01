@@ -396,15 +396,10 @@ def main():
     # Paths
     project_root = Path(__file__).parent.parent
     xml_path = project_root / 'JMdict_e'
-    schema_path = project_root / 'database' / 'jmdict_schema.sql'
     
     if not xml_path.exists():
         print(f"Error: {xml_path} not found")
         print("Download from: http://www.edrdg.org/jmdict/edict_doc.html")
-        sys.exit(1)
-    
-    if not schema_path.exists():
-        print(f"Error: {schema_path} not found")
         sys.exit(1)
     
     # Database connection params

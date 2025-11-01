@@ -53,7 +53,17 @@ router.get('/:id', async (req: Request, res: Response) => {
         },
         resource_words: {
           include: {
-            dictionary_entries: true
+            dictionary_entries: {
+              include: {
+                entry_kanji: true,
+                entry_readings: true,
+                entry_senses: {
+                  include: {
+                    sense_glosses: true
+                  }
+                }
+              }
+            }
           },
           orderBy: { frequency: 'desc' }
         }
