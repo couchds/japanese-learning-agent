@@ -89,6 +89,7 @@ const ResourceDetail: React.FC = () => {
   const [kanjiSearchResults, setKanjiSearchResults] = useState<SearchKanjiResult[]>([]);
   const [wordSearchResults, setWordSearchResults] = useState<SearchWordResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [wordSearchMode, setWordSearchMode] = useState<'auto' | 'english' | 'japanese'>('auto');
 
   // Frequency input state
   const [frequencyInputs, setFrequencyInputs] = useState<Record<string, number>>({});
@@ -222,13 +223,23 @@ const ResourceDetail: React.FC = () => {
     try {
       setSearchLoading(true);
       
-      // Convert romaji to hiragana for better matching with database readings
-      const searchHiragana = wanakana.toHiragana(wordSearchQuery);
+      let searchTerm = wordSearchQuery;
       
-      // Use hiragana version for search if conversion happened, otherwise use original
-      const searchTerm = searchHiragana !== wordSearchQuery ? searchHiragana : wordSearchQuery;
+      // Apply conversion based on search mode
+      if (wordSearchMode === 'japanese') {
+        // Convert romaji to hiragana for Japanese reading search
+        searchTerm = wanakana.toHiragana(wordSearchQuery);
+      } else if (wordSearchMode === 'english') {
+        // Use as-is for English meaning search
+        searchTerm = wordSearchQuery;
+      } else {
+        // Auto mode: detect and convert if it's romaji
+        const searchHiragana = wanakana.toHiragana(wordSearchQuery);
+        const isRomaji = searchHiragana !== wordSearchQuery;
+        searchTerm = isRomaji ? searchHiragana : wordSearchQuery;
+      }
       
-      const response = await fetch(`http://localhost:3001/api/words?search=${encodeURIComponent(searchTerm)}&limit=20`, {
+      const response = await fetch(`http://localhost:3001/api/words?search=${encodeURIComponent(searchTerm)}&limit=50`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -563,10 +574,36 @@ const ResourceDetail: React.FC = () => {
 
         {showWordSearch && (
           <div className="search-panel">
+            <div className="search-mode-toggle">
+              <button 
+                className={`mode-button ${wordSearchMode === 'auto' ? 'active' : ''}`}
+                onClick={() => setWordSearchMode('auto')}
+              >
+                Auto
+              </button>
+              <button 
+                className={`mode-button ${wordSearchMode === 'japanese' ? 'active' : ''}`}
+                onClick={() => setWordSearchMode('japanese')}
+              >
+                Japanese (romaji/kana)
+              </button>
+              <button 
+                className={`mode-button ${wordSearchMode === 'english' ? 'active' : ''}`}
+                onClick={() => setWordSearchMode('english')}
+              >
+                English
+              </button>
+            </div>
             <div className="search-input-group">
               <input
                 type="text"
-                placeholder="Search words..."
+                placeholder={
+                  wordSearchMode === 'japanese' 
+                    ? 'Search by Japanese reading (e.g., sekai, せかい)...'
+                    : wordSearchMode === 'english'
+                    ? 'Search by English meaning (e.g., world)...'
+                    : 'Search words...'
+                }
                 value={wordSearchQuery}
                 onChange={(e) => setWordSearchQuery(e.target.value)}
               />

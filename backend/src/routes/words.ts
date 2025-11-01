@@ -8,7 +8,36 @@ router.get('/', async (req: Request, res: Response) => {
   try {
     const { search, limit = 50, offset = 0 } = req.query;
 
+    const conditions: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+    let exactSearchParam = 0;
+    let partialSearchParam = 0;
+
+    if (search) {
+      partialSearchParam = paramCount;
+      values.push(`%${search}%`);
+      paramCount++;
+      
+      exactSearchParam = paramCount;
+      values.push(search as string);
+      paramCount++;
+    }
+
     let query = `
+      WITH matched_entries AS (
+        SELECT DISTINCT de.id
+        FROM dictionary_entries de
+        LEFT JOIN entry_kanji ek ON de.id = ek.entry_id
+        LEFT JOIN entry_readings er ON de.id = er.entry_id
+        LEFT JOIN entry_senses es ON de.id = es.entry_id
+        LEFT JOIN sense_glosses sg ON es.id = sg.sense_id
+        ${search ? `WHERE (
+          ek.kanji ILIKE $${partialSearchParam} OR 
+          er.reading ILIKE $${partialSearchParam} OR 
+          sg.gloss ILIKE $${partialSearchParam}
+        )` : ''}
+      )
       SELECT
         de.id,
         de.entry_id,
@@ -27,21 +56,32 @@ router.get('/', async (req: Request, res: Response) => {
           WHERE es2.entry_id = de.id
         ) as parts_of_speech,
         BOOL_OR(COALESCE(ek.is_common, false) OR COALESCE(er.is_common, false)) as is_common,
-        -- Compute frequency score (lower = more common)
-        -- nf* tags: nf01 (most common) to nf48 (less common)
-        -- Other priority tags get higher scores
         MIN(
           CASE 
-            -- Extract nf* number if present (nf01 -> 1, nf48 -> 48)
             WHEN tag ~ '^nf[0-9]{2}$' THEN SUBSTRING(tag FROM 3)::INTEGER
-            -- High priority non-nf tags
             WHEN tag IN ('news1', 'ichi1', 'spec1', 'gai1') THEN 50
             WHEN tag IN ('news2', 'ichi2', 'spec2', 'gai2') THEN 100
-            -- No priority tag
             ELSE 999
           END
-        ) as frequency_score
-      FROM dictionary_entries de
+        ) as frequency_score,
+        ${search ? `
+        CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM entry_kanji ek2 
+            WHERE ek2.entry_id = de.id AND ek2.kanji = $${exactSearchParam}
+          ) OR EXISTS (
+            SELECT 1 FROM entry_readings er2 
+            WHERE er2.entry_id = de.id AND er2.reading = $${exactSearchParam}
+          ) OR EXISTS (
+            SELECT 1 FROM entry_senses es3
+            JOIN sense_glosses sg2 ON es3.id = sg2.sense_id
+            WHERE es3.entry_id = de.id AND LOWER(sg2.gloss) = LOWER($${exactSearchParam})
+          ) THEN 0
+          ELSE 1
+        END as match_type
+        ` : '1 as match_type'}
+      FROM matched_entries me
+      JOIN dictionary_entries de ON me.id = de.id
       LEFT JOIN entry_kanji ek ON de.id = ek.entry_id
       LEFT JOIN entry_readings er ON de.id = er.entry_id
       LEFT JOIN entry_senses es ON de.id = es.entry_id
@@ -49,29 +89,8 @@ router.get('/', async (req: Request, res: Response) => {
       LEFT JOIN LATERAL (
         SELECT unnest(COALESCE(ek.priority_tags, ARRAY[]::text[]) || COALESCE(er.priority_tags, ARRAY[]::text[])) as tag
       ) tags ON true
-    `;
-
-    const conditions: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
-
-    if (search) {
-      conditions.push(`(
-        ek.kanji ILIKE $${paramCount} OR 
-        er.reading ILIKE $${paramCount} OR 
-        sg.gloss ILIKE $${paramCount}
-      )`);
-      values.push(`%${search}%`);
-      paramCount++;
-    }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
-    query += `
       GROUP BY de.id, de.entry_id
-      ORDER BY frequency_score ASC, is_common DESC, de.entry_id
+      ORDER BY match_type ASC, frequency_score ASC, is_common DESC, de.entry_id
       LIMIT $${paramCount++} OFFSET $${paramCount++}
     `;
 
