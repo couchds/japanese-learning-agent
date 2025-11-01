@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as wanakana from 'wanakana';
+import { useAuth } from '../context/AuthContext';
 import './Words.css';
 
 interface WordData {
@@ -10,9 +11,11 @@ interface WordData {
   glosses: string[] | null;
   parts_of_speech: string[] | null;
   is_common: boolean;
+  frequency_score: number;
 }
 
 const Words: React.FC = () => {
+  const { token } = useAuth();
   const [words, setWords] = useState<WordData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,13 +24,19 @@ const Words: React.FC = () => {
   const itemsPerPage = 50;
 
   useEffect(() => {
-    fetchWords();
-  }, []);
+    if (token) {
+      fetchWords();
+    }
+  }, [token]);
 
   const fetchWords = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/words?limit=2000`);
+      const response = await fetch(`http://localhost:3001/api/words?limit=2000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch words');
       }

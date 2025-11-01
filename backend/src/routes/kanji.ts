@@ -6,7 +6,7 @@ const router = Router();
 // GET /api/kanji - Get all kanji with optional filters
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { grade, jlpt, limit = 50, offset = 0 } = req.query;
+    const { grade, jlpt, search, limit = 50, offset = 0 } = req.query;
 
     let query = `
       SELECT 
@@ -29,6 +29,24 @@ router.get('/', async (req: Request, res: Response) => {
     const conditions: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
+
+    if (search) {
+      // Search in literal (character), meanings, and readings
+      conditions.push(`(
+        k.literal = $${paramCount} OR 
+        km.meaning ILIKE $${paramCount + 1} OR
+        EXISTS (
+          SELECT 1 FROM unnest(k.on_readings) as reading 
+          WHERE reading ILIKE $${paramCount + 1}
+        ) OR
+        EXISTS (
+          SELECT 1 FROM unnest(k.kun_readings) as reading 
+          WHERE reading ILIKE $${paramCount + 1}
+        )
+      )`);
+      values.push(search as string, `%${search}%`);
+      paramCount += 2;
+    }
 
     if (grade) {
       conditions.push(`k.grade = $${paramCount++}`);

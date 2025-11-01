@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as wanakana from 'wanakana';
+import { useAuth } from '../context/AuthContext';
 import './Kanji.css';
 
 interface KanjiData {
@@ -12,6 +13,7 @@ interface KanjiData {
 }
 
 const Kanji: React.FC = () => {
+  const { token } = useAuth();
   const [kanji, setKanji] = useState<KanjiData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,13 +22,19 @@ const Kanji: React.FC = () => {
   const itemsPerPage = 50;
 
   useEffect(() => {
-    fetchKanji();
-  }, []);
+    if (token) {
+      fetchKanji();
+    }
+  }, [token]);
 
   const fetchKanji = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/kanji?limit=2500`);
+      const response = await fetch(`http://localhost:3001/api/kanji?limit=2500`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch kanji');
       }
