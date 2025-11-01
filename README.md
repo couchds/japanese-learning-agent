@@ -11,7 +11,7 @@
 Download `kanjidic2.xml` from: https://www.edrdg.org/kanjidic/kanjd2index_legacy.html
 
 **JMDict** (Japanese-English dictionary)
-Download `JMdict_e` from: http://www.edrdg.org/jmdict/edict_doc.html
+Download `JMdict_e` from: http://ftp.edrdg.org/pub/Nihongo/00INDEX.html
 
 Place both files in project root.
 
