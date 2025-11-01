@@ -148,6 +148,14 @@
   margin-bottom: 20px;
 }
 
+.search-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 12px;
+}
+
 .search-mode-toggle {
   display: flex;
   gap: 8px;

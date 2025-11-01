@@ -72,14 +72,10 @@ const ResourceDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Search state
-  const [showWordSearch, setShowWordSearch] = useState(false);
   const [wordSearchQuery, setWordSearchQuery] = useState('');
   const [wordSearchResults, setWordSearchResults] = useState<SearchWordResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [wordSearchMode, setWordSearchMode] = useState<'auto' | 'english' | 'japanese'>('auto');
-
-  // Frequency input state
-  const [frequencyInputs, setFrequencyInputs] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (token && id) {
@@ -89,7 +85,7 @@ const ResourceDetail: React.FC = () => {
 
   // Real-time word search with debouncing
   useEffect(() => {
-    if (!showWordSearch || !token) {
+    if (!token) {
       return;
     }
 
@@ -103,7 +99,7 @@ const ResourceDetail: React.FC = () => {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [wordSearchQuery, showWordSearch, token]);
+  }, [wordSearchQuery, token]);
 
   const fetchResource = async () => {
     try {
@@ -169,31 +165,47 @@ const ResourceDetail: React.FC = () => {
   };
 
   const addWord = async (entryId: number) => {
-    const frequency = frequencyInputs[`word-${entryId}`] || 1;
-
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}/words`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          entry_id: entryId,
-          frequency: frequency
-        })
-      });
+      // Check if word already exists in the resource
+      const existingWord = resource?.resource_words.find(rw => rw.entry_id === entryId);
+      
+      if (existingWord) {
+        // Word exists, increment frequency by 1
+        const response = await fetch(`http://localhost:3001/api/resources/${id}/words/${entryId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ frequency: existingWord.frequency + 1 })
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to add word');
+        if (!response.ok) {
+          throw new Error('Failed to update word frequency');
+        }
+      } else {
+        // Word doesn't exist, add it with frequency 1
+        const response = await fetch(`http://localhost:3001/api/resources/${id}/words`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            entry_id: entryId,
+            frequency: 1
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to add word');
+        }
       }
 
       // Refresh resource data
       fetchResource();
-      setShowWordSearch(false);
       setWordSearchQuery('');
       setWordSearchResults([]);
-      setFrequencyInputs({});
     } catch (err) {
       console.error('Error adding word:', err);
     }
@@ -303,87 +315,69 @@ const ResourceDetail: React.FC = () => {
       <div className="vocabulary-section">
         <div className="section-header">
           <h2>Words ({resource.resource_words.length})</h2>
-          <button 
-            onClick={() => setShowWordSearch(!showWordSearch)}
-            className="add-vocab-button"
-          >
-            {showWordSearch ? 'Cancel' : '+ Add Word'}
-          </button>
         </div>
 
-        {showWordSearch && (
-          <div className="search-panel">
-            <div className="search-mode-toggle">
-              <button 
-                className={`mode-button ${wordSearchMode === 'auto' ? 'active' : ''}`}
-                onClick={() => setWordSearchMode('auto')}
-              >
-                Auto
-              </button>
-              <button 
-                className={`mode-button ${wordSearchMode === 'japanese' ? 'active' : ''}`}
-                onClick={() => setWordSearchMode('japanese')}
-              >
-                Japanese (romaji/kana)
-              </button>
-              <button 
-                className={`mode-button ${wordSearchMode === 'english' ? 'active' : ''}`}
-                onClick={() => setWordSearchMode('english')}
-              >
-                English
-              </button>
-            </div>
-            <div className="search-input-group">
-              <input
-                type="text"
-                placeholder={
-                  wordSearchMode === 'japanese' 
-                    ? 'Search by Japanese reading (e.g., sekai, せかい)...'
-                    : wordSearchMode === 'english'
-                    ? 'Search by English meaning (e.g., world)...'
-                    : 'Search words...'
-                }
-                value={wordSearchQuery}
-                onChange={(e) => setWordSearchQuery(e.target.value)}
-              />
-              {searchLoading && <span className="search-loading">Searching...</span>}
-            </div>
-
-            {wordSearchResults.length > 0 && (
-              <div className="search-results">
-                {wordSearchResults.map((word) => (
-                  <div key={word.id} className="search-result-item">
-                    <div className="result-content">
-                      <div className="word-forms">
-                        {word.kanji_forms && word.kanji_forms.length > 0 && (
-                          <span className="kanji-forms">{word.kanji_forms.join(', ')}</span>
-                        )}
-                        <span className="readings">{word.readings?.join(', ') || 'No readings'}</span>
-                      </div>
-                      <span className="glosses">{word.glosses?.slice(0, 3).join('; ') || 'No definition'}</span>
-                    </div>
-                    <div className="result-actions">
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="Freq"
-                        value={frequencyInputs[`word-${word.id}`] || ''}
-                        onChange={(e) => setFrequencyInputs({
-                          ...frequencyInputs,
-                          [`word-${word.id}`]: parseInt(e.target.value) || 0
-                        })}
-                        className="frequency-input"
-                      />
-                      <button onClick={() => addWord(word.id)} className="add-button">
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className="search-panel">
+          <label className="search-label">Search for Word</label>
+          <div className="search-mode-toggle">
+            <button 
+              className={`mode-button ${wordSearchMode === 'auto' ? 'active' : ''}`}
+              onClick={() => setWordSearchMode('auto')}
+            >
+              Auto
+            </button>
+            <button 
+              className={`mode-button ${wordSearchMode === 'japanese' ? 'active' : ''}`}
+              onClick={() => setWordSearchMode('japanese')}
+            >
+              Japanese (romaji/kana)
+            </button>
+            <button 
+              className={`mode-button ${wordSearchMode === 'english' ? 'active' : ''}`}
+              onClick={() => setWordSearchMode('english')}
+            >
+              English
+            </button>
           </div>
-        )}
+          <div className="search-input-group">
+            <input
+              type="text"
+              placeholder={
+                wordSearchMode === 'japanese' 
+                  ? 'Search by Japanese reading (e.g., sekai, せかい)...'
+                  : wordSearchMode === 'english'
+                  ? 'Search by English meaning (e.g., world)...'
+                  : 'Search words...'
+              }
+              value={wordSearchQuery}
+              onChange={(e) => setWordSearchQuery(e.target.value)}
+            />
+            {searchLoading && <span className="search-loading">Searching...</span>}
+          </div>
+
+          {wordSearchResults.length > 0 && (
+            <div className="search-results">
+              {wordSearchResults.map((word) => (
+                <div key={word.id} className="search-result-item">
+                  <div className="result-content">
+                    <div className="word-forms">
+                      {word.kanji_forms && word.kanji_forms.length > 0 && (
+                        <span className="kanji-forms">{word.kanji_forms.join(', ')}</span>
+                      )}
+                      <span className="readings">{word.readings?.join(', ') || 'No readings'}</span>
+                    </div>
+                    <span className="glosses">{word.glosses?.slice(0, 3).join('; ') || 'No definition'}</span>
+                  </div>
+                  <div className="result-actions">
+                    <button onClick={() => addWord(word.id)} className="add-button">
+                      Add
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="vocabulary-list">
           {resource.resource_words.map((rw) => {
