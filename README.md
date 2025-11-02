@@ -1,4 +1,4 @@
-# Japanese Learning Agent
+# Japanese Learning Platform
 
 ## Setup
 
