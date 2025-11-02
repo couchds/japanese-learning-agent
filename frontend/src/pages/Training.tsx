@@ -92,10 +92,12 @@ const Training: React.FC = () => {
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [isListening, setIsListening] = useState(false);
+  const [isWarmingUp, setIsWarmingUp] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [recognition, setRecognition] = useState<any>(null);
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 2;
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   
   useEffect(() => {
     if (token && id) {
@@ -118,87 +120,11 @@ const Training: React.FC = () => {
     }
   }, [trainingMode]);
 
-  // Initialize speech recognition
+  // Initialize audio recording
   useEffect(() => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.lang = 'ja-JP';
-      recognitionInstance.continuous = false;
-      recognitionInstance.interimResults = false;
-
-      recognitionInstance.onresult = (event: any) => {
-        const speechResult = event.results[0][0].transcript;
-        setTranscript(speechResult);
-        setIsListening(false);
-        isStartingRecognition.current = false;
-        setRetryCount(0);
-      };
-
-      recognitionInstance.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        
-        // Handle no-speech error with auto-retry
-        if (event.error === 'no-speech') {
-          setRetryCount(prev => {
-            if (prev < maxRetries) {
-              // Auto-retry
-              setTimeout(() => {
-                if (recognitionInstance && !isStartingRecognition.current) {
-                  try {
-                    isStartingRecognition.current = true;
-                    recognitionInstance.start();
-                  } catch (error) {
-                    setIsListening(false);
-                    isStartingRecognition.current = false;
-                  }
-                }
-              }, 100);
-              return prev + 1;
-            } else {
-              // Max retries reached
-              setIsListening(false);
-              isStartingRecognition.current = false;
-              alert('No speech detected after multiple attempts. Please:\n\n1. Check your microphone is working\n2. Speak immediately after clicking\n3. Speak clearly and loudly\n4. Make sure microphone permission is granted');
-              return 0;
-            }
-          });
-          return;
-        }
-        
-        // For other errors, stop immediately
-        setIsListening(false);
-        isStartingRecognition.current = false;
-        setRetryCount(0);
-        
-        // Provide helpful error messages based on error type
-        let errorMessage = '';
-        switch (event.error) {
-          case 'audio-capture':
-            errorMessage = 'No microphone found. Please check your microphone is connected.';
-            break;
-          case 'not-allowed':
-            errorMessage = 'Microphone access denied. Please allow microphone access in your browser settings.';
-            break;
-          case 'network':
-            errorMessage = 'Network error. Speech recognition requires an internet connection.';
-            break;
-          default:
-            errorMessage = `Speech recognition error: ${event.error}. Please try again.`;
-        }
-        alert(errorMessage);
-      };
-
-      recognitionInstance.onend = () => {
-        setIsListening(false);
-        isStartingRecognition.current = false;
-      };
-
-      recognitionInstance.onstart = () => {
-        isStartingRecognition.current = false;
-      };
-
-      setRecognition(recognitionInstance);
+    // Check if browser supports getUserMedia
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('getUserMedia not supported');
     }
   }, []);
 
@@ -451,30 +377,146 @@ const Training: React.FC = () => {
     return matrix[str2.length][str1.length];
   };
 
-  const startListening = () => {
-    if (!recognition) {
-      alert('Speech recognition is not supported in your browser. Please use Chrome or Edge.');
-      return;
-    }
-
+  const startListening = async () => {
     if (isListening || isStartingRecognition.current) {
       return;
     }
 
-    isStartingRecognition.current = true;
-    
-    setTranscript('');
-    setResult(null);
-    setRetryCount(0);
-    setIsListening(true);
-    
     try {
-      recognition.start();
+      isStartingRecognition.current = true;
+      setTranscript('');
+      setResult(null);
+      setRetryCount(0);
+      setIsListening(true);
+
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Create MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        setIsListening(false);
+        setIsWarmingUp(false);
+        isStartingRecognition.current = false;
+
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+
+        // Create audio blob
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        
+        console.log(`Created audio blob with ${audioChunksRef.current.length} chunks, total size: ${audioBlob.size} bytes`);
+        
+        // Check if we actually captured audio
+        if (audioBlob.size < 1000) {
+          console.error('Audio blob is too small!');
+          setResult('incorrect');
+          return;
+        }
+        
+        // Send to backend for transcription
+        await transcribeAudio(audioBlob);
+      };
+
+      // Start recording immediately (to warm up the hardware)
+      mediaRecorder.start();
+      console.log('Recording started at:', Date.now());
+      
+      // Show "Get ready..." for 1000ms to let microphone warm up
+      setIsWarmingUp(true);
+      
+      setTimeout(() => {
+        // Now the user should speak
+        console.log('Warm-up complete, user should speak now');
+        setIsWarmingUp(false);
+      }, 1000);
+
+      // Auto-stop after 5 seconds total (1s warmup + 4s recording)
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          console.log('Stopping recording at:', Date.now());
+          mediaRecorderRef.current.stop();
+        }
+      }, 5000);
+
     } catch (error) {
       setIsListening(false);
+      setIsWarmingUp(false);
       isStartingRecognition.current = false;
-      alert('Could not start speech recognition. Please try again.');
+      console.error('Error starting audio recording:', error);
+      alert('Could not access microphone. Please grant microphone permission.');
     }
+  };
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    try {
+      console.log(`Sending audio blob: ${audioBlob.size} bytes (${audioBlob.type})`);
+      
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'audio.webm');
+
+      const response = await fetch('http://localhost:3001/api/transcribe', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+
+      const data = await response.json();
+      const transcriptText = data.transcript || '';
+      
+      console.log('Transcription received:', transcriptText, '(length:', transcriptText.length, ')');
+      
+      setIsListening(false);
+      
+      if (transcriptText) {
+        setTranscript(transcriptText);
+        setRetryCount(0);
+      } else {
+        // No speech detected, retry
+        console.log('No speech detected, retrying...');
+        handleNoSpeechRetry();
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+      setIsListening(false);
+      handleNoSpeechRetry();
+    }
+  };
+
+  const handleNoSpeechRetry = () => {
+    setRetryCount(prev => {
+      const newRetryCount = prev + 1;
+      
+      if (newRetryCount <= maxRetries) {
+        // Auto-retry
+        console.log(`No speech detected, retry ${newRetryCount}/${maxRetries + 1}`);
+        setTimeout(() => {
+          startListening();
+        }, 1000); // Longer delay to ensure state is clean
+        return newRetryCount;
+      } else {
+        // Max retries reached
+        console.log('Max retries reached');
+        alert('No speech detected after multiple attempts. Please:\n\n1. Speak LOUDER and more clearly\n2. Wait for "Speak NOW!" before speaking\n3. Check your microphone is working\n4. Try a longer word if the word is very short');
+        setRetryCount(0);
+        return 0;
+      }
+    });
   };
 
   const handleNext = () => {
@@ -633,12 +675,16 @@ const Training: React.FC = () => {
               <div className="speech-instructions">
                 {isListening ? (
                   <div className="listening-prompt">
-                    🎤 <strong>Speak now!</strong> Say the word clearly
+                    {isWarmingUp ? (
+                      <>⏳ <strong>Get ready...</strong> (warming up mic)</>
+                    ) : (
+                      <>🎤 <strong>Speak NOW!</strong> (4 seconds)</>
+                    )}
                     {retryCount > 0 && <div className="retry-indicator">Attempt {retryCount + 1} of {maxRetries + 1}</div>}
                   </div>
                 ) : (
                   <div className="speech-hint">
-                    Click the microphone button, then speak the word immediately
+                    Click microphone → Wait for "Speak NOW!" → Say the word LOUDLY and clearly
                   </div>
                 )}
               </div>
@@ -654,12 +700,6 @@ const Training: React.FC = () => {
               {transcript && (
                 <div className="transcript-display">
                   <strong>You said:</strong> {transcript}
-                </div>
-              )}
-
-              {!recognition && (
-                <div className="warning-message">
-                  Speech recognition is not supported in your browser. Please use Chrome or Edge.
                 </div>
               )}
             </div>
