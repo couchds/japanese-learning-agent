@@ -49,7 +49,7 @@ const PronunciationTraining: React.FC = () => {
   const fetchWords = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/words?limit=2000`, {
+      const response = await fetch(`http://localhost:3001/api/words?limit=2000&in_resources=true`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -216,10 +216,29 @@ const PronunciationTraining: React.FC = () => {
     return <div className="loading">Loading...</div>;
   }
 
+  if (words.length === 0) {
+    return (
+      <div className="pronunciation-training-page">
+        <h1>Pronunciation Training</h1>
+        <p className="subtitle">Record and manage pronunciation data for words from your resources</p>
+        <div className="no-words-message">
+          <h2>No words found in your resources</h2>
+          <p>To get started:</p>
+          <ol>
+            <li>Go to the <a href="/resources">Resources</a> page</li>
+            <li>Create a resource (e.g., "Dragon Quest III", "Naruto Volume 1")</li>
+            <li>Add words from the Word Dictionary to your resource</li>
+            <li>Come back here to practice pronunciation!</li>
+          </ol>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pronunciation-training-page">
       <h1>Pronunciation Training</h1>
-      <p className="subtitle">Record and manage your pronunciation reference recordings</p>
+      <p className="subtitle">Record and manage pronunciation data for words from your resources</p>
 
       <div className="training-container">
         {/* Left panel: Word search */}

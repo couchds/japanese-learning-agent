@@ -6,13 +6,15 @@ const router = Router();
 // GET /api/words - Get dictionary entries with optional search
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const { search, limit = 50, offset = 0 } = req.query;
+    const { search, limit = 50, offset = 0, in_resources } = req.query;
+    const userId = req.user?.userId;
 
     const conditions: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
     let exactSearchParam = 0;
     let partialSearchParam = 0;
+    let userIdParam = 0;
 
     if (search) {
       partialSearchParam = paramCount;
@@ -24,6 +26,13 @@ router.get('/', async (req: Request, res: Response) => {
       paramCount++;
     }
 
+    // Add user filter for in_resources
+    if (in_resources === 'true' && userId) {
+      userIdParam = paramCount;
+      values.push(userId);
+      paramCount++;
+    }
+
     let query = `
       WITH matched_entries AS (
         SELECT DISTINCT de.id
@@ -32,7 +41,13 @@ router.get('/', async (req: Request, res: Response) => {
         LEFT JOIN entry_readings er ON de.id = er.entry_id
         LEFT JOIN entry_senses es ON de.id = es.entry_id
         LEFT JOIN sense_glosses sg ON es.id = sg.sense_id
-        ${search ? `WHERE (
+        ${in_resources === 'true' && userId ? `
+        INNER JOIN resource_words rw ON de.id = rw.entry_id
+        INNER JOIN resources r ON rw.resource_id = r.id
+        ` : ''}
+        WHERE 1=1
+        ${in_resources === 'true' && userId ? `AND r.user_id = $${userIdParam}` : ''}
+        ${search ? `AND (
           ek.kanji ILIKE $${partialSearchParam} OR 
           er.reading ILIKE $${partialSearchParam} OR 
           sg.gloss ILIKE $${partialSearchParam}

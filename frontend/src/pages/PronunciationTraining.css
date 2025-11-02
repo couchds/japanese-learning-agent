@@ -361,6 +361,40 @@
   color: #666;
 }
 
+.no-words-message {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 40px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.no-words-message h2 {
+  margin-top: 0;
+  color: #666;
+}
+
+.no-words-message p {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.no-words-message ol {
+  text-align: left;
+  color: #666;
+  line-height: 2;
+}
+
+.no-words-message a {
+  color: #2196F3;
+  text-decoration: none;
+}
+
+.no-words-message a:hover {
+  text-decoration: underline;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .training-container {
