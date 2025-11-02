@@ -260,7 +260,7 @@ The application will be available at http://localhost:3000
 
 ## Fair Use Notice
 
-This project may reference or display small portions of copyrighted media (such as artwork or screenshots) from Dragon Quest III, © Square Enix.
+This README may reference or display small portions of copyrighted media (such as artwork or screenshots) from Dragon Quest III, © Square Enix.
 Such materials are used solely for educational and illustrative purposes — to demonstrate Japanese language learning concepts — under the Fair Use provisions of U.S. copyright law (17 U.S.C. §107).
 
 This project is non-commercial, transformative, and not affiliated with or endorsed by Square Enix.
