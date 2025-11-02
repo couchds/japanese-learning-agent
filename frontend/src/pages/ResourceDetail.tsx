@@ -407,12 +407,13 @@ const ResourceDetail: React.FC = () => {
         </div>
       </div>
 
+      <div className="training-banners">
       {resource.resource_kanji && resource.resource_kanji.length > 0 && (
-        <div className="training-banner" onClick={() => navigate(`/resources/${id}/train`)}>
+          <div className="training-banner" onClick={() => navigate(`/resources/${id}/train/kanji`)}>
           <div className="training-banner-content">
-            <div className="training-icon">⚔️</div>
+              <div className="training-icon">✍️</div>
             <div className="training-text">
-              <h2>Kanji Training</h2>
+                <h2>Kanji Recall</h2>
               <p>Practice drawing {resource.resource_kanji.length} kanji from this resource</p>
             </div>
             <div className="training-cta">
@@ -422,6 +423,23 @@ const ResourceDetail: React.FC = () => {
           </div>
         </div>
       )}
+
+        {resource.resource_words && resource.resource_words.length > 0 && (
+          <div className="training-banner speech-banner" onClick={() => navigate(`/resources/${id}/train/speech`)}>
+            <div className="training-banner-content">
+              <div className="training-icon">🗣️</div>
+              <div className="training-text">
+                <h2>Speech Practice</h2>
+                <p>Practice pronunciation of {resource.resource_words.length} words from this resource</p>
+              </div>
+              <div className="training-cta">
+                <span>START TRAINING</span>
+                <span className="arrow">→</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {(resource.description || (resource.tags && resource.tags.length > 0)) && (
         <div className="resource-info">

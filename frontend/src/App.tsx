@@ -31,7 +31,8 @@ function App() {
             <Route path="kanji-draw" element={<KanjiDraw />} />
             <Route path="resources" element={<Resources />} />
             <Route path="resources/:id" element={<ResourceDetail />} />
-            <Route path="resources/:id/train" element={<Training />} />
+            <Route path="resources/:id/train/kanji" element={<Training />} />
+            <Route path="resources/:id/train/speech" element={<Training />} />
           </Route>
         </Routes>
       </AuthProvider>
