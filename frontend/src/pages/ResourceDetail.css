@@ -462,6 +462,108 @@
   font-size: 16px;
 }
 
+.kanji-description {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background-color: #f0f4ff;
+  border-left: 4px solid #667eea;
+  border-radius: 4px;
+}
+
+.kanji-description p {
+  margin: 0;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.kanji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.kanji-card {
+  background-color: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.kanji-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.kanji-character {
+  font-size: 64px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.kanji-info {
+  width: 100%;
+  text-align: center;
+}
+
+.kanji-info .kanji-meanings {
+  font-size: 14px;
+  font-weight: 500;
+  color: #34495e;
+  margin-bottom: 8px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kanji-info .kanji-readings {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-bottom: 4px;
+}
+
+.kanji-info .reading-label {
+  font-weight: 600;
+  color: #667eea;
+  margin-right: 4px;
+}
+
+.kanji-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.meta-tag {
+  padding: 4px 8px;
+  background-color: #ecf0f1;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5f6368;
+  white-space: nowrap;
+}
+
+.frequency-badge {
+  padding: 4px 8px;
+  background-color: #667eea;
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .loading {
   text-align: center;
   padding: 50px;
