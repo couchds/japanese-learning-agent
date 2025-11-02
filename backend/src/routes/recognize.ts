@@ -8,18 +8,18 @@ const RECOGNITION_SERVICE_URL = process.env.RECOGNITION_SERVICE_URL || 'http://l
 // POST /api/recognize - Recognize kanji from drawing
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { image, limit = 10 } = req.body;
+    const { paths, limit = 10 } = req.body;
 
-    if (!image) {
+    if (!paths) {
       return res.status(400).json({
         success: false,
-        error: 'Missing image data'
+        error: 'Missing paths data'
       });
     }
 
     // Forward the request to the Python recognition service
     const response = await axios.post(`${RECOGNITION_SERVICE_URL}/recognize`, {
-      image,
+      paths,
       limit
     }, {
       timeout: 10000 // 10 second timeout

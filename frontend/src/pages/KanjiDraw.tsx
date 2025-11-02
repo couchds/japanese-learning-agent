@@ -22,7 +22,7 @@ interface KanjiDetails {
 const KanjiDraw: React.FC = () => {
   const { token } = useAuth();
   const canvasRef = useRef<ReactSketchCanvasRef>(null);
-  const [strokeWidth, setStrokeWidth] = useState(8);
+  const [strokeWidth, setStrokeWidth] = useState(20);
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
   const [recognitionResults, setRecognitionResults] = useState<RecognitionResult[]>([]);
@@ -72,10 +72,9 @@ const KanjiDraw: React.FC = () => {
       setError(null);
       
       try {
-        // Export the drawing as an image
-        const imageData = await canvasRef.current.exportImage('png');
+        // Send stroke paths directly to backend for recognition
+        console.log('Sending paths:', paths);
         
-        // Send to backend for recognition
         const response = await fetch('http://localhost:3001/api/recognize', {
           method: 'POST',
           headers: {
@@ -83,7 +82,7 @@ const KanjiDraw: React.FC = () => {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            image: imageData,
+            paths: paths,
             limit: 10
           })
         });
