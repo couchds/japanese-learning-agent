@@ -197,6 +197,11 @@
   border: 3px solid #28a745;
 }
 
+.result-section.close {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border: 3px solid #ffc107;
+}
+
 .result-section.incorrect {
   background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
   border: 3px solid #dc3545;
@@ -209,6 +214,11 @@
 
 .result-section.correct .result-icon {
   color: #28a745;
+}
+
+.result-section.close .result-icon {
+  color: #ffc107;
+  font-size: 64px;
 }
 
 .result-section.incorrect .result-icon {

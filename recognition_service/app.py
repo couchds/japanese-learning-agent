@@ -38,7 +38,7 @@ def convert_svg_paths_to_strokes(paths):
     }]
     
     KanjiDraw expects: [[x1, y1, x2, y2], [x1, y1, x2, y2], ...]
-    Each path object represents ONE stroke, so we simplify it to start -> end
+    Each user stroke should become ONE kanjidraw stroke to preserve stroke count.
     """
     strokes = []
     
@@ -66,11 +66,15 @@ def convert_svg_paths_to_strokes(paths):
         if len(points) < 2:
             continue
         
-        # Treat each path as ONE stroke: from first point to last point
-        # This matches how KanjiDraw expects stroke data
+        # Each user stroke = ONE kanjidraw stroke
+        # Use start point and end point to preserve direction
         x1, y1 = points[0]
         x2, y2 = points[-1]
-        strokes.append([x1, y1, x2, y2])
+        
+        # Only add if the stroke has reasonable length
+        distance = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        if distance > 5:  # Minimum 5 pixels to filter out noise
+            strokes.append([x1, y1, x2, y2])
     
     return strokes
 

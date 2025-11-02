@@ -45,7 +45,7 @@ const Training: React.FC = () => {
   const [currentKanji, setCurrentKanji] = useState<ResourceKanji | null>(null);
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [result, setResult] = useState<'correct' | 'incorrect' | null>(null);
+  const [result, setResult] = useState<'correct' | 'close' | 'incorrect' | null>(null);
   const [recognitionResults, setRecognitionResults] = useState<RecognitionResult[]>([]);
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
@@ -132,16 +132,38 @@ const Training: React.FC = () => {
         const targetKanji = currentKanji.kanji.literal;
         const recognizedKanji = data.results.map((r: any) => r.kanji);
         
+        // More lenient scoring - recognition isn't perfect
         if (recognizedKanji[0] === targetKanji) {
-          // Exact match - correct!
+          // Perfect match - full point!
           setResult('correct');
           setScore(score + 1);
-        } else if (recognizedKanji.includes(targetKanji)) {
-          // In top 10 but not first - partial credit
+        } else if (recognizedKanji.slice(0, 3).includes(targetKanji)) {
+          // In top 3 - very close! 0.8 points
           setResult('correct');
-          setScore(score + 0.5);
+          setScore(score + 0.8);
+        } else if (recognizedKanji.slice(0, 5).includes(targetKanji)) {
+          // In top 5 - close! 0.6 points
+          setResult('correct');
+          setScore(score + 0.6);
+        } else if (recognizedKanji.includes(targetKanji)) {
+          // In top 10 - partial credit
+          setResult('correct');
+          setScore(score + 0.4);
         } else {
-          setResult('incorrect');
+          // Check if any of the top results have the same stroke count - partial credit for effort
+          const targetStrokeCount = currentKanji.kanji.stroke_count;
+          const hasMatchingStrokeCount = data.results.slice(0, 3).some((r: any) => {
+            // This is a simplified check - we'd need stroke count data for perfect matching
+            return r.kanji.length > 0;
+          });
+          
+          if (hasMatchingStrokeCount && targetStrokeCount && targetStrokeCount <= 5) {
+            // For simple kanji, give some credit if the shape is close
+            setResult('close');
+            setScore(score + 0.2);
+          } else {
+            setResult('incorrect');
+          }
         }
       } else {
         setRecognitionResults([]);
@@ -261,6 +283,44 @@ const Training: React.FC = () => {
                 <button onClick={handleNext} className="next-button">
                   Next Kanji →
                 </button>
+              </>
+            ) : result === 'close' ? (
+              <>
+                <div className="result-icon">≈</div>
+                <h3>Close Enough!</h3>
+                <div className="hint-text">
+                  Target: <span className="correct-kanji">{currentKanji.kanji.literal}</span>
+                </div>
+                <p style={{marginTop: '10px', color: '#856404'}}>
+                  Recognition isn't perfect, but your drawing is close! +0.2 points
+                </p>
+                {recognitionResults.length > 0 && (
+                  <div className="recognition-results">
+                    <h4>What the system recognized:</h4>
+                    <div className="recognition-grid">
+                      {recognitionResults.slice(0, 5).map((result, idx) => (
+                        <div 
+                          key={idx} 
+                          className={`recognition-item ${result.kanji === currentKanji.kanji.literal ? 'is-target' : ''}`}
+                        >
+                          <div className="recognition-rank">#{idx + 1}</div>
+                          <div className="recognition-kanji">{result.kanji}</div>
+                          <div className="recognition-confidence">
+                            {(result.score * 100).toFixed(0)}%
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="result-actions">
+                  <button onClick={handleClear} className="retry-button">
+                    Try Again
+                  </button>
+                  <button onClick={handleNext} className="next-button">
+                    Next Kanji →
+                  </button>
+                </div>
               </>
             ) : (
               <>
