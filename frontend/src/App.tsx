@@ -9,6 +9,7 @@ import KanjiDraw from './pages/KanjiDraw';
 import Words from './pages/Words';
 import Resources from './pages/Resources';
 import ResourceDetail from './pages/ResourceDetail';
+import Training from './pages/Training';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import './App.css';
@@ -30,6 +31,7 @@ function App() {
             <Route path="kanji-draw" element={<KanjiDraw />} />
             <Route path="resources" element={<Resources />} />
             <Route path="resources/:id" element={<ResourceDetail />} />
+            <Route path="resources/:id/train" element={<Training />} />
           </Route>
         </Routes>
       </AuthProvider>

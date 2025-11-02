@@ -407,6 +407,22 @@ const ResourceDetail: React.FC = () => {
         </div>
       </div>
 
+      {resource.resource_kanji && resource.resource_kanji.length > 0 && (
+        <div className="training-banner" onClick={() => navigate(`/resources/${id}/train`)}>
+          <div className="training-banner-content">
+            <div className="training-icon">⚔️</div>
+            <div className="training-text">
+              <h2>Kanji Training</h2>
+              <p>Practice drawing {resource.resource_kanji.length} kanji from this resource</p>
+            </div>
+            <div className="training-cta">
+              <span>START TRAINING</span>
+              <span className="arrow">→</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(resource.description || (resource.tags && resource.tags.length > 0)) && (
         <div className="resource-info">
           {resource.description && (
