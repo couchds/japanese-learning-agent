@@ -183,6 +183,7 @@ Runs the React app on http://localhost:3000
 - Home - Welcome page
 - Word Dictionary - Browse and search Japanese words from JMDict
 - Kanji Dictionary - Browse and search kanji characters
+- Draw Kanji - Draw kanji characters with mouse, touchpad, or stylus for recognition (frontend only)
 
 ## Usage
 

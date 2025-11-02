@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Kanji from './pages/Kanji';
+import KanjiDraw from './pages/KanjiDraw';
 import Words from './pages/Words';
 import Resources from './pages/Resources';
 import ResourceDetail from './pages/ResourceDetail';
@@ -26,6 +27,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="words" element={<Words />} />
             <Route path="kanji" element={<Kanji />} />
+            <Route path="kanji-draw" element={<KanjiDraw />} />
             <Route path="resources" element={<Resources />} />
             <Route path="resources/:id" element={<ResourceDetail />} />
           </Route>

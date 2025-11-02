@@ -7,7 +7,7 @@ const Layout: React.FC = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [isDictionaryExpanded, setIsDictionaryExpanded] = useState(
-    location.pathname === '/kanji' || location.pathname === '/words'
+    location.pathname === '/kanji' || location.pathname === '/words' || location.pathname === '/kanji-draw'
   );
 
   const toggleDictionary = () => {
@@ -35,6 +35,9 @@ const Layout: React.FC = () => {
                   </li>
                   <li>
                     <Link to="/kanji">Kanji Dictionary</Link>
+                  </li>
+                  <li>
+                    <Link to="/kanji-draw">Draw Kanji</Link>
                   </li>
                 </ul>
               )}
