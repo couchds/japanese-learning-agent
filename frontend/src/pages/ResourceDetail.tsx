@@ -48,6 +48,27 @@ interface CustomVocabulary {
   notes?: string;
 }
 
+interface KanjiMeaning {
+  meaning: string;
+}
+
+interface ResourceKanji {
+  id: number;
+  kanji_id: number;
+  frequency: number;
+  notes?: string;
+  kanji: {
+    id: number;
+    literal: string;
+    meanings: string[];
+    on_readings: string[] | null;
+    kun_readings: string[] | null;
+    stroke_count: number | null;
+    grade: number | null;
+    kanji_meanings: KanjiMeaning[];
+  };
+}
+
 interface Resource {
   id: number;
   name: string;
@@ -59,6 +80,7 @@ interface Resource {
   tags: string[];
   resource_words: ResourceWord[];
   custom_vocabulary: CustomVocabulary[];
+  resource_kanji: ResourceKanji[];
 }
 
 interface SearchWordResult {
@@ -92,7 +114,7 @@ const ResourceDetail: React.FC = () => {
   const [customMeaning, setCustomMeaning] = useState('');
   
   // Tab state
-  const [activeTab, setActiveTab] = useState<'dictionary' | 'custom'>('dictionary');
+  const [activeTab, setActiveTab] = useState<'dictionary' | 'custom' | 'kanji'>('dictionary');
 
   useEffect(() => {
     if (token && id) {
@@ -385,6 +407,22 @@ const ResourceDetail: React.FC = () => {
         </div>
       </div>
 
+      {resource.resource_kanji && resource.resource_kanji.length > 0 && (
+        <div className="training-banner" onClick={() => navigate(`/resources/${id}/train`)}>
+          <div className="training-banner-content">
+            <div className="training-icon">⚔️</div>
+            <div className="training-text">
+              <h2>Kanji Training</h2>
+              <p>Practice drawing {resource.resource_kanji.length} kanji from this resource</p>
+            </div>
+            <div className="training-cta">
+              <span>START TRAINING</span>
+              <span className="arrow">→</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {(resource.description || (resource.tags && resource.tags.length > 0)) && (
         <div className="resource-info">
           {resource.description && (
@@ -413,6 +451,12 @@ const ResourceDetail: React.FC = () => {
             onClick={() => setActiveTab('custom')}
           >
             Custom Words ({resource.custom_vocabulary.length})
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'kanji' ? 'active' : ''}`}
+            onClick={() => setActiveTab('kanji')}
+          >
+            Kanji ({resource.resource_kanji.length})
           </button>
         </div>
 
@@ -590,6 +634,45 @@ const ResourceDetail: React.FC = () => {
               )}
             </div>
           </>
+        )}
+
+        {activeTab === 'kanji' && (
+          <div className="kanji-list">
+            <div className="kanji-description">
+              <p>Kanji characters that appear in the words for this resource, sorted by frequency.</p>
+            </div>
+            
+            <div className="kanji-grid">
+              {resource.resource_kanji.map((rk) => (
+                <div key={rk.id} className="kanji-card">
+                  <div className="kanji-character">{rk.kanji.literal}</div>
+                  <div className="kanji-info">
+                    <div className="kanji-meanings">
+                      {rk.kanji.kanji_meanings?.slice(0, 3).map(m => m.meaning).join(', ')}
+                    </div>
+                    {rk.kanji.on_readings && rk.kanji.on_readings.length > 0 && (
+                      <div className="kanji-readings">
+                        <span className="reading-label">On:</span> {rk.kanji.on_readings.slice(0, 2).join('、')}
+                      </div>
+                    )}
+                    {rk.kanji.kun_readings && rk.kanji.kun_readings.length > 0 && (
+                      <div className="kanji-readings">
+                        <span className="reading-label">Kun:</span> {rk.kanji.kun_readings.slice(0, 2).join('、')}
+                      </div>
+                    )}
+                    <div className="kanji-meta">
+                      {rk.kanji.grade && <span className="meta-tag">Grade {rk.kanji.grade}</span>}
+                      {rk.kanji.stroke_count && <span className="meta-tag">{rk.kanji.stroke_count} strokes</span>}
+                      <span className="frequency-badge">{rk.frequency}x</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {resource.resource_kanji.length === 0 && (
+                <p className="empty-message">No kanji data yet. Kanji are automatically extracted from dictionary words you add.</p>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>

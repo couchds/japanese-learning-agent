@@ -398,6 +398,54 @@ router.post('/:id/words', async (req: Request, res: Response) => {
       }
     });
 
+    // Extract and link kanji from this word
+    try {
+      // Get all kanji forms for this entry
+      const entryKanji = await prisma.entry_kanji.findMany({
+        where: { entry_id: entry_id },
+        include: {
+          entry_kanji_characters: {
+            include: {
+              kanji: true
+            }
+          }
+        }
+      });
+
+      // Collect all unique kanji IDs from this entry
+      const kanjiIds = new Set<number>();
+      for (const ek of entryKanji) {
+        for (const ekc of ek.entry_kanji_characters) {
+          kanjiIds.add(ekc.kanji_id);
+        }
+      }
+
+      // For each kanji, update or create resource_kanji entry
+      for (const kanjiId of kanjiIds) {
+        await prisma.resource_kanji.upsert({
+          where: {
+            resource_id_kanji_id: {
+              resource_id: resourceId,
+              kanji_id: kanjiId
+            }
+          },
+          update: {
+            frequency: {
+              increment: frequency || 1
+            }
+          },
+          create: {
+            resource_id: resourceId,
+            kanji_id: kanjiId,
+            frequency: frequency || 1
+          }
+        });
+      }
+    } catch (kanjiError) {
+      console.error('Error linking kanji:', kanjiError);
+      // Don't fail the whole request if kanji linking fails
+    }
+
     res.status(201).json(resourceWord);
   } catch (error) {
     console.error('Error adding word to resource:', error);
@@ -469,6 +517,80 @@ router.delete('/:id/words/:entryId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Resource not found' });
     }
 
+    // Get the kanji from this word before deleting
+    try {
+      const entryKanji = await prisma.entry_kanji.findMany({
+        where: { entry_id: entryId },
+        include: {
+          entry_kanji_characters: true
+        }
+      });
+
+      const kanjiIds = new Set<number>();
+      for (const ek of entryKanji) {
+        for (const ekc of ek.entry_kanji_characters) {
+          kanjiIds.add(ekc.kanji_id);
+        }
+      }
+
+      // Get the frequency of the word being removed
+      const resourceWord = await prisma.resource_words.findUnique({
+        where: {
+          resource_id_entry_id: {
+            resource_id: resourceId,
+            entry_id: entryId
+          }
+        }
+      });
+
+      const wordFrequency = resourceWord?.frequency || 1;
+
+      // Decrement frequency for each kanji, or delete if it would go to 0
+      for (const kanjiId of kanjiIds) {
+        const resourceKanji = await prisma.resource_kanji.findUnique({
+          where: {
+            resource_id_kanji_id: {
+              resource_id: resourceId,
+              kanji_id: kanjiId
+            }
+          }
+        });
+
+        if (resourceKanji) {
+          const newFrequency = resourceKanji.frequency - wordFrequency;
+          
+          if (newFrequency <= 0) {
+            // Remove the kanji if frequency would be 0 or negative
+            await prisma.resource_kanji.delete({
+              where: {
+                resource_id_kanji_id: {
+                  resource_id: resourceId,
+                  kanji_id: kanjiId
+                }
+              }
+            });
+          } else {
+            // Update the frequency
+            await prisma.resource_kanji.update({
+              where: {
+                resource_id_kanji_id: {
+                  resource_id: resourceId,
+                  kanji_id: kanjiId
+                }
+              },
+              data: {
+                frequency: newFrequency
+              }
+            });
+          }
+        }
+      }
+    } catch (kanjiError) {
+      console.error('Error updating kanji frequencies:', kanjiError);
+      // Continue with word deletion even if kanji update fails
+    }
+
+    // Delete the word
     await prisma.resource_words.delete({
       where: {
         resource_id_entry_id: {

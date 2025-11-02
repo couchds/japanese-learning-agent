@@ -19,6 +19,113 @@
   background-color: #d5d8dc;
 }
 
+.training-banner {
+  margin: 20px 0 30px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.training-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.training-banner:hover::before {
+  left: 100%;
+}
+
+.training-banner:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
+}
+
+.training-banner-content {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.training-icon {
+  font-size: 48px;
+  animation: pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.training-text {
+  flex: 1;
+}
+
+.training-text h2 {
+  margin: 0 0 8px 0;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.training-text p {
+  margin: 0;
+  color: #b8c5d6;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.training-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border-radius: 8px;
+  color: #1a1a2e;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  transition: all 0.2s;
+}
+
+.training-banner:hover .training-cta {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.6);
+}
+
+.training-cta .arrow {
+  font-size: 20px;
+  transition: transform 0.2s;
+}
+
+.training-banner:hover .training-cta .arrow {
+  transform: translateX(4px);
+}
+
 .resource-header-section {
   display: flex;
   align-items: center;
@@ -460,6 +567,108 @@
   padding: 40px 20px;
   color: #7f8c8d;
   font-size: 16px;
+}
+
+.kanji-description {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background-color: #f0f4ff;
+  border-left: 4px solid #667eea;
+  border-radius: 4px;
+}
+
+.kanji-description p {
+  margin: 0;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+.kanji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.kanji-card {
+  background-color: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.kanji-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  transform: translateY(-2px);
+}
+
+.kanji-character {
+  font-size: 64px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 12px;
+  line-height: 1;
+}
+
+.kanji-info {
+  width: 100%;
+  text-align: center;
+}
+
+.kanji-info .kanji-meanings {
+  font-size: 14px;
+  font-weight: 500;
+  color: #34495e;
+  margin-bottom: 8px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kanji-info .kanji-readings {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-bottom: 4px;
+}
+
+.kanji-info .reading-label {
+  font-weight: 600;
+  color: #667eea;
+  margin-right: 4px;
+}
+
+.kanji-meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.meta-tag {
+  padding: 4px 8px;
+  background-color: #ecf0f1;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #5f6368;
+  white-space: nowrap;
+}
+
+.frequency-badge {
+  padding: 4px 8px;
+  background-color: #667eea;
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .loading {
