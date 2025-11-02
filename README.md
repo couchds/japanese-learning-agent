@@ -167,7 +167,40 @@ Runs the Express API on http://localhost:3001
 - `GET /api/kanji/:id` - Get a single kanji by ID
 - `GET /api/words` - Get dictionary entries (supports ?search=X, ?limit=X, ?offset=X)
 - `GET /api/words/:id` - Get a single dictionary entry by ID
+- `POST /api/recognize` - Recognize kanji from drawn image (requires recognition service)
+- `GET /api/recognize/health` - Check recognition service status
 - `GET /health` - Health check
+
+## Recognition Service (Python)
+
+The kanji drawing recognition feature requires a separate Python service using KanjiDraw.
+
+### Setup Recognition Service
+
+```bash
+cd recognition_service
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the service
+python app.py
+```
+
+The recognition service will start on http://localhost:5000
+
+**Note:** The backend automatically connects to the recognition service. Make sure it's running before using the kanji drawing feature.
+
+### Environment Variables
+
+Configure in `backend/.env`:
+```bash
+RECOGNITION_SERVICE_URL=http://localhost:5000  # Optional, defaults to localhost:5000
+```
 
 ## Frontend
 
@@ -183,11 +216,38 @@ Runs the React app on http://localhost:3000
 - Home - Welcome page
 - Word Dictionary - Browse and search Japanese words from JMDict
 - Kanji Dictionary - Browse and search kanji characters
-- Draw Kanji - Draw kanji characters with mouse, touchpad, or stylus for recognition (frontend only)
+- Draw Kanji - Draw kanji characters with mouse, touchpad, or stylus for handwriting recognition (requires recognition service)
 
 ## Usage
 
-TODO
+### Running the Full Application
+
+To run the complete application with all features:
+
+1. **Start the PostgreSQL database** (ensure it's running)
+
+2. **Start the recognition service** (in one terminal):
+   ```bash
+   cd recognition_service
+   source venv/bin/activate  # If not already activated
+   python app.py
+   ```
+
+3. **Start the backend API** (in another terminal):
+   ```bash
+   cd backend
+   npm run dev
+   ```
+
+4. **Start the frontend** (in another terminal):
+   ```bash
+   cd frontend
+   npm start
+   ```
+
+The application will be available at http://localhost:3000
+
+**Note:** The kanji drawing recognition feature requires all three services to be running. Other features work with just the backend and frontend.
 
 ## License
 

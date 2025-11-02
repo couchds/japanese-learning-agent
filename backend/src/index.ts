@@ -5,6 +5,7 @@ import kanjiRoutes from './routes/kanji';
 import wordsRoutes from './routes/words';
 import authRoutes from './routes/auth';
 import resourcesRoutes from './routes/resources';
+import recognizeRoutes from './routes/recognize';
 import { authenticateToken } from './middleware/auth';
 
 dotenv.config({ path: '../.env' });
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/kanji', authenticateToken, kanjiRoutes);
 app.use('/api/words', authenticateToken, wordsRoutes);
 app.use('/api/resources', authenticateToken, resourcesRoutes);
+app.use('/api/recognize', authenticateToken, recognizeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

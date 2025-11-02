@@ -1,17 +1,42 @@
 import React, { useRef, useState } from 'react';
 import { ReactSketchCanvas, ReactSketchCanvasRef } from 'react-sketch-canvas';
+import { useAuth } from '../context/AuthContext';
 import './KanjiDraw.css';
 
+interface RecognitionResult {
+  kanji: string;
+  score: number;
+}
+
+interface KanjiDetails {
+  id: number;
+  literal: string;
+  meanings: string[];
+  on_readings: string[] | null;
+  kun_readings: string[] | null;
+  stroke_count: number | null;
+  grade: number | null;
+  jlpt_level: number | null;
+}
+
 const KanjiDraw: React.FC = () => {
+  const { token } = useAuth();
   const canvasRef = useRef<ReactSketchCanvasRef>(null);
   const [strokeWidth, setStrokeWidth] = useState(8);
   const [strokeColor, setStrokeColor] = useState('#000000');
   const [canvasSize, setCanvasSize] = useState({ width: 400, height: 400 });
+  const [recognitionResults, setRecognitionResults] = useState<RecognitionResult[]>([]);
+  const [kanjiDetails, setKanjiDetails] = useState<KanjiDetails[]>([]);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleClear = () => {
     if (canvasRef.current) {
       canvasRef.current.clearCanvas();
     }
+    setRecognitionResults([]);
+    setKanjiDetails([]);
+    setError(null);
   };
 
   const handleUndo = () => {
@@ -39,16 +64,73 @@ const KanjiDraw: React.FC = () => {
     if (canvasRef.current) {
       const paths = await canvasRef.current.exportPaths();
       if (paths.length === 0) {
-        alert('Please draw something first!');
+        setError('Please draw something first!');
         return;
       }
       
-      // Export the drawing as an image for future recognition
-      const image = await canvasRef.current.exportImage('png');
-      console.log('Drawing data:', { paths, image });
+      setIsRecognizing(true);
+      setError(null);
       
-      // Placeholder for future kanji recognition
-      alert('Kanji recognition will be implemented here!\n\nYour drawing has been captured and is ready to be sent to a recognition service.');
+      try {
+        // Export the drawing as an image
+        const imageData = await canvasRef.current.exportImage('png');
+        
+        // Send to backend for recognition
+        const response = await fetch('http://localhost:3001/api/recognize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            image: imageData,
+            limit: 10
+          })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Recognition failed');
+        }
+
+        if (data.success && data.results) {
+          setRecognitionResults(data.results);
+          
+          // Fetch details for each recognized kanji
+          await fetchKanjiDetails(data.results.map((r: RecognitionResult) => r.kanji));
+        } else {
+          setError(data.error || 'No results found');
+        }
+      } catch (err) {
+        console.error('Recognition error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to recognize kanji. Make sure the Python recognition service is running.');
+      } finally {
+        setIsRecognizing(false);
+      }
+    }
+  };
+
+  const fetchKanjiDetails = async (kanjiList: string[]) => {
+    try {
+      const detailsPromises = kanjiList.map(async (kanji) => {
+        const response = await fetch(`http://localhost:3001/api/kanji?search=${encodeURIComponent(kanji)}&limit=1`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          return data.kanji && data.kanji.length > 0 ? data.kanji[0] : null;
+        }
+        return null;
+      });
+
+      const details = await Promise.all(detailsPromises);
+      setKanjiDetails(details.filter((d): d is KanjiDetails => d !== null));
+    } catch (err) {
+      console.error('Error fetching kanji details:', err);
     }
   };
 
@@ -126,12 +208,21 @@ const KanjiDraw: React.FC = () => {
 
           <div className="control-section">
             <h3>Recognition</h3>
-            <button onClick={handleSearch} className="search-button">
-              Search Kanji
+            <button 
+              onClick={handleSearch} 
+              className="search-button"
+              disabled={isRecognizing}
+            >
+              {isRecognizing ? 'Recognizing...' : 'Search Kanji'}
             </button>
             <p className="help-text">
               Draw a kanji character in the canvas and click "Search Kanji" to find it.
             </p>
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
           </div>
 
           <div className="control-section tips">
@@ -147,10 +238,48 @@ const KanjiDraw: React.FC = () => {
       </div>
 
       <div className="results-section">
-        <h2>Search Results</h2>
-        <p className="placeholder-text">
-          Recognition results will appear here once the backend is implemented.
-        </p>
+        <h2>Recognition Results</h2>
+        {recognitionResults.length === 0 ? (
+          <p className="placeholder-text">
+            Draw a kanji and click "Search Kanji" to see recognition results.
+          </p>
+        ) : (
+          <>
+            <div className="results-grid">
+              {recognitionResults.map((result, index) => {
+                const details = kanjiDetails.find(k => k.literal === result.kanji);
+                return (
+                  <div key={index} className="result-card">
+                    <div className="result-kanji">{result.kanji}</div>
+                    <div className="result-confidence">
+                      Confidence: {(result.score * 100).toFixed(1)}%
+                    </div>
+                    {details && (
+                      <div className="result-details">
+                        <div className="result-meanings">
+                          {details.meanings?.join(', ')}
+                        </div>
+                        <div className="result-readings">
+                          {details.on_readings && details.on_readings.length > 0 && (
+                            <div>On: {details.on_readings.join('、')}</div>
+                          )}
+                          {details.kun_readings && details.kun_readings.length > 0 && (
+                            <div>Kun: {details.kun_readings.join('、')}</div>
+                          )}
+                        </div>
+                        {details.stroke_count && (
+                          <div className="result-strokes">
+                            {details.stroke_count} strokes
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
