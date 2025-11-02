@@ -1,5 +1,14 @@
 # Japanese Learning Platform
 
+Prototype (heavily vibe-coded!) for platform to learn Japanese using custom user-defined resources, and tracking user progress. This repo mainly has ideas I'm experimenting with and using for personal learning.
+
+## Concept
+The basic concept of this system (at the time of writing this, I'm on day 3 of development...) is that the user manages a collection of resources representing various media (video games, manga, books, etc.), which can then be linked to different words. The kanji these words are comprised of are then _also_ linked to the resource, and the platform will then assist the user in the learning of these words and kanji. There's a ton I'd like to do here, including agentic tooling and some kind of gamified XP system but this whole user-managed resource system" is the foundation for the system.
+
+For example, I've recently been playing _Dragon Quest III_. So, in the application I create a resource representing this and I'm then able to track words that commonly appear over the course of the game:
+<img width="1432" height="1034" alt="image" src="https://github.com/user-attachments/assets/4a9a4838-b16d-40c6-911d-4e2093713d35" />
+
+
 ## Setup
 
 ### Prerequisites
@@ -249,7 +258,11 @@ The application will be available at http://localhost:3000
 
 **Note:** The kanji drawing recognition feature requires all three services to be running. Other features work with just the backend and frontend.
 
-## License
+## Fair Use Notice
 
-TODO
+This project may reference or display small portions of copyrighted media (such as artwork or screenshots) from Dragon Quest III, © Square Enix.
+Such materials are used solely for educational and illustrative purposes — to demonstrate Japanese language learning concepts — under the Fair Use provisions of U.S. copyright law (17 U.S.C. §107).
+
+This project is non-commercial, transformative, and not affiliated with or endorsed by Square Enix.
+All trademarks and copyrights remain the property of their respective owners.
 
