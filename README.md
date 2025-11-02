@@ -226,6 +226,47 @@ Runs the React app on http://localhost:3000
 - Word Dictionary - Browse and search Japanese words from JMDict
 - Kanji Dictionary - Browse and search kanji characters
 - Draw Kanji - Draw kanji characters with mouse, touchpad, or stylus for handwriting recognition (requires recognition service)
+- Pronunciation Training - Record and manage pronunciation data for custom speech model training
+
+## Custom Speech Model Training
+
+This platform includes a pronunciation training system that allows you to build your own speech recognition dataset as you learn Japanese.
+
+### How It Works
+
+1. **Record Pronunciations**: Navigate to the Pronunciation Training page and search for any word in the dictionary
+2. **Save Reference Recordings**: Record yourself saying the word and mark good recordings as "Reference" pronunciations
+3. **Build Training Data**: Over time, you'll accumulate a collection of labeled audio recordings
+4. **Train Custom Models**: Use the collected data to train personalized speech recognition models
+
+### Data Storage
+
+**Audio Files**: Stored in `backend/uploads/pronunciations/`
+- Format: `{userId}-{timestamp}.webm` (or .mp3, .wav, etc.)
+- Supported formats: MP3, WAV, WebM, OGG, M4A
+
+**Metadata**: Stored in PostgreSQL `pronunciation_recordings` table
+- `is_reference = true`: High-quality recordings intended for model training
+- `is_reference = false`: Practice recordings for personal progress tracking
+- Links recordings to specific dictionary entries and users
+
+### Future Training Capabilities
+
+The collected data can be used for:
+- Fine-tuning existing speech recognition models (Whisper, Wav2Vec 2.0)
+- Building lightweight keyword spotting models for your learned vocabulary
+- Creating personalized pronunciation assessment tools
+- Tracking pronunciation improvement over time
+
+### Exporting Training Data
+
+To export your training data for model training, query reference recordings:
+```sql
+SELECT pr.*, de.* 
+FROM pronunciation_recordings pr
+JOIN dictionary_entries de ON pr.entry_id = de.id
+WHERE pr.is_reference = true;
+```
 
 ## Usage
 
