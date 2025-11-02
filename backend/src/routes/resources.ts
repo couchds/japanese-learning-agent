@@ -66,6 +66,9 @@ router.get('/:id', async (req: Request, res: Response) => {
             }
           },
           orderBy: { frequency: 'desc' }
+        },
+        custom_vocabulary: {
+          orderBy: { frequency: 'desc' }
         }
       }
     });
@@ -478,6 +481,149 @@ router.delete('/:id/words/:entryId', async (req: Request, res: Response) => {
     res.json({ message: 'Word removed from resource' });
   } catch (error) {
     console.error('Error removing word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/resources/:id/custom-words - Add custom word to resource
+router.post('/:id/custom-words', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const resourceId = parseInt(req.params.id);
+    const { word, reading, meaning, frequency } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (!word) {
+      return res.status(400).json({ error: 'Word is required' });
+    }
+
+    // Verify resource belongs to user
+    const resource = await prisma.resources.findFirst({
+      where: { id: resourceId, user_id: userId }
+    });
+
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    // Check if custom word already exists
+    const existing = await prisma.custom_vocabulary.findUnique({
+      where: {
+        resource_id_word: {
+          resource_id: resourceId,
+          word: word
+        }
+      }
+    });
+
+    if (existing) {
+      // Update frequency if it exists
+      const updated = await prisma.custom_vocabulary.update({
+        where: {
+          resource_id_word: {
+            resource_id: resourceId,
+            word: word
+          }
+        },
+        data: {
+          frequency: existing.frequency + 1
+        }
+      });
+      return res.json(updated);
+    }
+
+    // Create new custom word
+    const customWord = await prisma.custom_vocabulary.create({
+      data: {
+        resource_id: resourceId,
+        word: word,
+        reading: reading || null,
+        meaning: meaning || null,
+        frequency: frequency || 1
+      }
+    });
+
+    res.status(201).json(customWord);
+  } catch (error) {
+    console.error('Error adding custom word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/resources/:id/custom-words/:wordId - Update custom word
+router.put('/:id/custom-words/:wordId', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const resourceId = parseInt(req.params.id);
+    const wordId = parseInt(req.params.wordId);
+    const { frequency, reading, meaning, notes } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Verify resource belongs to user
+    const resource = await prisma.resources.findFirst({
+      where: { id: resourceId, user_id: userId }
+    });
+
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    const updated = await prisma.custom_vocabulary.update({
+      where: {
+        id: wordId,
+        resource_id: resourceId
+      },
+      data: {
+        frequency: frequency,
+        reading: reading,
+        meaning: meaning,
+        notes: notes
+      }
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating custom word:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/resources/:id/custom-words/:wordId - Remove custom word from resource
+router.delete('/:id/custom-words/:wordId', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const resourceId = parseInt(req.params.id);
+    const wordId = parseInt(req.params.wordId);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    // Verify resource belongs to user
+    const resource = await prisma.resources.findFirst({
+      where: { id: resourceId, user_id: userId }
+    });
+
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    await prisma.custom_vocabulary.delete({
+      where: {
+        id: wordId,
+        resource_id: resourceId
+      }
+    });
+
+    res.json({ message: 'Custom word removed from resource' });
+  } catch (error) {
+    console.error('Error removing custom word:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

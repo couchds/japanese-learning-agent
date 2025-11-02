@@ -39,6 +39,15 @@ interface ResourceWord {
   dictionary_entries: DictionaryEntry;
 }
 
+interface CustomVocabulary {
+  id: number;
+  word: string;
+  reading?: string;
+  meaning?: string;
+  frequency: number;
+  notes?: string;
+}
+
 interface Resource {
   id: number;
   name: string;
@@ -49,6 +58,7 @@ interface Resource {
   difficulty_level?: string;
   tags: string[];
   resource_words: ResourceWord[];
+  custom_vocabulary: CustomVocabulary[];
 }
 
 interface SearchWordResult {
@@ -76,6 +86,13 @@ const ResourceDetail: React.FC = () => {
   const [wordSearchResults, setWordSearchResults] = useState<SearchWordResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [wordSearchMode, setWordSearchMode] = useState<'auto' | 'english' | 'japanese'>('auto');
+
+  // Custom vocabulary state
+  const [customWord, setCustomWord] = useState('');
+  const [customMeaning, setCustomMeaning] = useState('');
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'dictionary' | 'custom'>('dictionary');
 
   useEffect(() => {
     if (token && id) {
@@ -260,6 +277,77 @@ const ResourceDetail: React.FC = () => {
       .join(' ');
   };
 
+  const addCustomWord = async () => {
+    if (!customWord.trim()) return;
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/resources/${id}/custom-words`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          word: customWord,
+          meaning: customMeaning || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add custom word');
+      }
+
+      // Refresh resource data
+      fetchResource();
+      setCustomWord('');
+      setCustomMeaning('');
+    } catch (err) {
+      console.error('Error adding custom word:', err);
+    }
+  };
+
+  const updateCustomWordFrequency = async (wordId: number, newFrequency: number) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/resources/${id}/custom-words/${wordId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ frequency: newFrequency })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update custom word frequency');
+      }
+
+      fetchResource();
+    } catch (err) {
+      console.error('Error updating custom word frequency:', err);
+    }
+  };
+
+  const removeCustomWord = async (wordId: number) => {
+    if (!window.confirm('Remove this custom word from the resource?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/resources/${id}/custom-words/${wordId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove custom word');
+      }
+
+      fetchResource();
+    } catch (err) {
+      console.error('Error removing custom word:', err);
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading resource...</div>;
   }
@@ -313,118 +401,196 @@ const ResourceDetail: React.FC = () => {
       )}
 
       <div className="vocabulary-section">
-        <div className="section-header">
-          <h2>Words ({resource.resource_words.length})</h2>
+        <div className="tabs-container">
+          <button
+            className={`tab-button ${activeTab === 'dictionary' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dictionary')}
+          >
+            Dictionary Words ({resource.resource_words.length})
+          </button>
+          <button
+            className={`tab-button ${activeTab === 'custom' ? 'active' : ''}`}
+            onClick={() => setActiveTab('custom')}
+          >
+            Custom Words ({resource.custom_vocabulary.length})
+          </button>
         </div>
 
-        <div className="search-panel">
-          <label className="search-label">Search for Word</label>
-          <div className="search-mode-toggle">
-            <button 
-              className={`mode-button ${wordSearchMode === 'auto' ? 'active' : ''}`}
-              onClick={() => setWordSearchMode('auto')}
-            >
-              Auto
-            </button>
-            <button 
-              className={`mode-button ${wordSearchMode === 'japanese' ? 'active' : ''}`}
-              onClick={() => setWordSearchMode('japanese')}
-            >
-              Japanese (romaji/kana)
-            </button>
-            <button 
-              className={`mode-button ${wordSearchMode === 'english' ? 'active' : ''}`}
-              onClick={() => setWordSearchMode('english')}
-            >
-              English
-            </button>
-          </div>
-          <div className="search-input-group">
-            <input
-              type="text"
-              placeholder={
-                wordSearchMode === 'japanese' 
-                  ? 'Search by Japanese reading (e.g., sekai, せかい)...'
-                  : wordSearchMode === 'english'
-                  ? 'Search by English meaning (e.g., world)...'
-                  : 'Search words...'
-              }
-              value={wordSearchQuery}
-              onChange={(e) => setWordSearchQuery(e.target.value)}
-            />
-            {searchLoading && <span className="search-loading">Searching...</span>}
-          </div>
+        {activeTab === 'dictionary' && (
+          <>
+            <div className="search-panel">
+              <label className="search-label">Search for Word</label>
+              <div className="search-mode-toggle">
+                <button 
+                  className={`mode-button ${wordSearchMode === 'auto' ? 'active' : ''}`}
+                  onClick={() => setWordSearchMode('auto')}
+                >
+                  Auto
+                </button>
+                <button 
+                  className={`mode-button ${wordSearchMode === 'japanese' ? 'active' : ''}`}
+                  onClick={() => setWordSearchMode('japanese')}
+                >
+                  Japanese (romaji/kana)
+                </button>
+                <button 
+                  className={`mode-button ${wordSearchMode === 'english' ? 'active' : ''}`}
+                  onClick={() => setWordSearchMode('english')}
+                >
+                  English
+                </button>
+              </div>
+              <div className="search-input-group">
+                <input
+                  type="text"
+                  placeholder={
+                    wordSearchMode === 'japanese' 
+                      ? 'Search by Japanese reading (e.g., sekai, せかい)...'
+                      : wordSearchMode === 'english'
+                      ? 'Search by English meaning (e.g., world)...'
+                      : 'Search words...'
+                  }
+                  value={wordSearchQuery}
+                  onChange={(e) => setWordSearchQuery(e.target.value)}
+                />
+                {searchLoading && <span className="search-loading">Searching...</span>}
+              </div>
 
-          {wordSearchResults.length > 0 && (
-            <div className="search-results">
-              {wordSearchResults.map((word) => (
-                <div key={word.id} className="search-result-item">
-                  <div className="result-content">
-                    <div className="word-forms">
-                      {word.kanji_forms && word.kanji_forms.length > 0 && (
-                        <span className="kanji-forms">{word.kanji_forms.join(', ')}</span>
-                      )}
-                      <span className="readings">{word.readings?.join(', ') || 'No readings'}</span>
+              {wordSearchResults.length > 0 && (
+                <div className="search-results">
+                  {wordSearchResults.map((word) => (
+                    <div key={word.id} className="search-result-item">
+                      <div className="result-content">
+                        <div className="word-forms">
+                          {word.kanji_forms && word.kanji_forms.length > 0 && (
+                            <span className="kanji-forms">{word.kanji_forms.join(', ')}</span>
+                          )}
+                          <span className="readings">{word.readings?.join(', ') || 'No readings'}</span>
+                        </div>
+                        <span className="glosses">{word.glosses?.slice(0, 3).join('; ') || 'No definition'}</span>
+                      </div>
+                      <div className="result-actions">
+                        <button onClick={() => addWord(word.id)} className="add-button">
+                          Add
+                        </button>
+                      </div>
                     </div>
-                    <span className="glosses">{word.glosses?.slice(0, 3).join('; ') || 'No definition'}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="vocabulary-list">
+              {resource.resource_words.map((rw) => {
+                const entry = rw.dictionary_entries;
+                const kanjiForm = entry.entry_kanji?.[0]?.kanji || '';
+                const reading = entry.entry_readings?.[0]?.reading || '';
+                const glosses = entry.entry_senses?.[0]?.sense_glosses?.slice(0, 3).map(g => g.gloss).join('; ') || '';
+                
+                return (
+                  <div key={rw.id} className="vocabulary-card">
+                    <div className="vocab-main">
+                      <div className="vocab-details">
+                        <div className="word-forms">
+                          {kanjiForm && <span className="kanji-forms">{kanjiForm}</span>}
+                          {reading && <span className="readings">{reading}</span>}
+                        </div>
+                        {glosses && <div className="glosses">{glosses}</div>}
+                        {!kanjiForm && !reading && (
+                          <div className="word-entry-id">Entry ID: {rw.entry_id} (dictionary data not loaded)</div>
+                        )}
+                        {rw.notes && <div className="notes">{rw.notes}</div>}
+                      </div>
+                    </div>
+                    <div className="vocab-meta">
+                      <input
+                        type="number"
+                        min="0"
+                        value={rw.frequency}
+                        onChange={(e) => updateWordFrequency(rw.entry_id, parseInt(e.target.value) || 0)}
+                        className="frequency-input"
+                        title="Frequency"
+                      />
+                      <button 
+                        onClick={() => removeWord(rw.entry_id)} 
+                        className="remove-button"
+                        title="Remove"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
-                  <div className="result-actions">
-                    <button onClick={() => addWord(word.id)} className="add-button">
-                      Add
+                );
+              })}
+              {resource.resource_words.length === 0 && (
+                <p className="empty-message">No dictionary words added yet.</p>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'custom' && (
+          <>
+            <div className="custom-word-form">
+              <label className="search-label">Add Custom Word</label>
+              <div className="custom-inputs">
+                <input
+                  type="text"
+                  placeholder="Katakana (e.g., ゲーム, マリオ)"
+                  value={customWord}
+                  onChange={(e) => setCustomWord(e.target.value)}
+                  className="custom-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Meaning (e.g., game, Mario)"
+                  value={customMeaning}
+                  onChange={(e) => setCustomMeaning(e.target.value)}
+                  className="custom-input"
+                />
+                <button onClick={addCustomWord} className="add-button" disabled={!customWord.trim()}>
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div className="vocabulary-list">
+              {resource.custom_vocabulary.map((cv) => (
+                <div key={cv.id} className="vocabulary-card">
+                  <div className="vocab-main">
+                    <div className="vocab-details">
+                      <div className="word-forms">
+                        <span className="kanji-forms">{cv.word}</span>
+                      </div>
+                      {cv.meaning && <div className="glosses">{cv.meaning}</div>}
+                      {cv.notes && <div className="notes">{cv.notes}</div>}
+                    </div>
+                  </div>
+                  <div className="vocab-meta">
+                    <input
+                      type="number"
+                      min="0"
+                      value={cv.frequency}
+                      onChange={(e) => updateCustomWordFrequency(cv.id, parseInt(e.target.value) || 0)}
+                      className="frequency-input"
+                      title="Frequency"
+                    />
+                    <button 
+                      onClick={() => removeCustomWord(cv.id)} 
+                      className="remove-button"
+                      title="Remove"
+                    >
+                      ×
                     </button>
                   </div>
                 </div>
               ))}
+              {resource.custom_vocabulary.length === 0 && (
+                <p className="empty-message">No custom words added yet.</p>
+              )}
             </div>
-          )}
-        </div>
-
-        <div className="vocabulary-list">
-          {resource.resource_words.map((rw) => {
-            const entry = rw.dictionary_entries;
-            const kanjiForm = entry.entry_kanji?.[0]?.kanji || '';
-            const reading = entry.entry_readings?.[0]?.reading || '';
-            const glosses = entry.entry_senses?.[0]?.sense_glosses?.slice(0, 3).map(g => g.gloss).join('; ') || '';
-            
-            return (
-              <div key={rw.id} className="vocabulary-card">
-                <div className="vocab-main">
-                  <div className="vocab-details">
-                    <div className="word-forms">
-                      {kanjiForm && <span className="kanji-forms">{kanjiForm}</span>}
-                      {reading && <span className="readings">{reading}</span>}
-                    </div>
-                    {glosses && <div className="glosses">{glosses}</div>}
-                    {!kanjiForm && !reading && (
-                      <div className="word-entry-id">Entry ID: {rw.entry_id} (dictionary data not loaded)</div>
-                    )}
-                    {rw.notes && <div className="notes">{rw.notes}</div>}
-                  </div>
-                </div>
-                <div className="vocab-meta">
-                  <input
-                    type="number"
-                    min="0"
-                    value={rw.frequency}
-                    onChange={(e) => updateWordFrequency(rw.entry_id, parseInt(e.target.value) || 0)}
-                    className="frequency-input"
-                    title="Frequency"
-                  />
-                  <button 
-                    onClick={() => removeWord(rw.entry_id)} 
-                    className="remove-button"
-                    title="Remove"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-          {resource.resource_words.length === 0 && (
-            <p className="empty-message">No words added yet. Click "+ Add Word" to get started!</p>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

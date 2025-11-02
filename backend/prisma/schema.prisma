@@ -143,6 +143,7 @@ model resources {
   users            users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   resource_kanji   resource_kanji[]
   resource_words   resource_words[]
+  custom_vocabulary custom_vocabulary[]
 
   @@index([difficulty_level], map: "idx_resources_difficulty")
   @@index([status], map: "idx_resources_status")
@@ -207,4 +208,20 @@ model resource_words {
   @@unique([resource_id, entry_id])
   @@index([resource_id], map: "idx_resource_words_resource_id")
   @@index([entry_id], map: "idx_resource_words_entry_id")
+}
+
+model custom_vocabulary {
+  id          Int       @id @default(autoincrement())
+  resource_id Int
+  word        String    @db.VarChar(255)
+  reading     String?   @db.VarChar(255)
+  meaning     String?
+  frequency   Int       @default(0)
+  notes       String?
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  resources   resources @relation(fields: [resource_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([resource_id, word])
+  @@index([resource_id], map: "idx_custom_vocabulary_resource_id")
 }
