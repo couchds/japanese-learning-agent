@@ -408,21 +408,21 @@ const ResourceDetail: React.FC = () => {
       </div>
 
       <div className="training-banners">
-        {resource.resource_kanji && resource.resource_kanji.length > 0 && (
+      {resource.resource_kanji && resource.resource_kanji.length > 0 && (
           <div className="training-banner" onClick={() => navigate(`/resources/${id}/train/kanji`)}>
-            <div className="training-banner-content">
+          <div className="training-banner-content">
               <div className="training-icon">✍️</div>
-              <div className="training-text">
+            <div className="training-text">
                 <h2>Kanji Recall</h2>
-                <p>Practice drawing {resource.resource_kanji.length} kanji from this resource</p>
-              </div>
-              <div className="training-cta">
-                <span>START TRAINING</span>
-                <span className="arrow">→</span>
-              </div>
+              <p>Practice drawing {resource.resource_kanji.length} kanji from this resource</p>
+            </div>
+            <div className="training-cta">
+              <span>START TRAINING</span>
+              <span className="arrow">→</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
         {resource.resource_words && resource.resource_words.length > 0 && (
           <div className="training-banner speech-banner" onClick={() => navigate(`/resources/${id}/train/speech`)}>

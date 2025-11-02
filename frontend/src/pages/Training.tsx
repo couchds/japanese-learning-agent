@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ReactSketchCanvas, ReactSketchCanvasRef } from 'react-sketch-canvas';
 import { useAuth } from '../context/AuthContext';
+import * as wanakana from 'wanakana';
 import './Training.css';
 
 interface RecognitionResult {
@@ -347,56 +348,72 @@ const Training: React.FC = () => {
 
     setAttempts(prev => prev + 1);
     
-    // Normalize the spoken text (remove spaces, periods, and other punctuation)
-    const normalizedSpoken = spokenText
-      .replace(/[\s.,!?。、]/g, '')
-      .toLowerCase()
-      .trim();
+    // Normalize function - remove spaces, punctuation, and long vowel marks
+    const normalize = (text: string) => {
+      return text
+        .replace(/[\s.,!?。、]/g, '')
+        .replace(/ー/g, '') // Remove long vowel marks (chōonpu)
+        .toLowerCase()
+        .trim();
+    };
+    
+    // Convert to romaji for phonetic comparison
+    const toRomaji = (text: string) => {
+      return wanakana.toRomaji(normalize(text))
+        .toLowerCase()
+        .replace(/[^a-z]/g, ''); // Remove any non-alphabetic characters
+    };
+    
+    // Normalize and convert the spoken text to romaji
+    const normalizedSpoken = normalize(spokenText);
+    const romajiSpoken = toRomaji(spokenText);
     
     // Get all valid readings for the word (both hiragana and katakana)
     const validReadings = currentWord.dictionary_entries.entry_readings.map(r => 
-      r.reading.replace(/[\s.,!?。、]/g, '').toLowerCase()
+      normalize(r.reading)
+    );
+    
+    const romajiReadings = currentWord.dictionary_entries.entry_readings.map(r =>
+      toRomaji(r.reading)
     );
 
     // Also consider the kanji forms if they exist
     const kanjiReadings = currentWord.dictionary_entries.entry_kanji
-      .map(k => k.kanji.replace(/[\s.,!?。、]/g, '').toLowerCase());
+      .map(k => normalize(k.kanji));
 
-    // Check exact match first
+    // Check exact match first (both in original script and romaji)
     const isExactMatch = validReadings.some(reading => reading === normalizedSpoken);
     const isKanjiMatch = kanjiReadings.some(kanji => kanji === normalizedSpoken);
+    const isRomajiExactMatch = romajiReadings.some(reading => reading === romajiSpoken);
     
-    if (isExactMatch || isKanjiMatch) {
+    if (isExactMatch || isKanjiMatch || isRomajiExactMatch) {
       setResult('correct');
       setScore(prev => prev + 1);
       return;
     }
 
-    // Check if it's a partial match (contains or is contained by valid reading)
-    const hasPartialMatch = validReadings.some(reading => {
-      const lengthRatio = Math.min(reading.length, normalizedSpoken.length) / 
-                         Math.max(reading.length, normalizedSpoken.length);
-      return lengthRatio > 0.7 && (
-        reading.includes(normalizedSpoken) || 
-        normalizedSpoken.includes(reading)
+    // Check phonetic similarity using romaji and Levenshtein distance
+    const hasPhoneticMatch = romajiReadings.some(reading => {
+      const distance = levenshteinDistance(reading, romajiSpoken);
+      const maxLength = Math.max(reading.length, romajiSpoken.length);
+      const similarity = 1 - (distance / maxLength);
+      
+      // Threshold of 75% for phonetic matching (stricter to avoid false positives)
+      if (similarity >= 0.75) {
+        return true;
+      }
+      
+      // Also check if it's a substring match (for partial words)
+      // Only accept if very close in length and one contains the other
+      const lengthRatio = Math.min(reading.length, romajiSpoken.length) / 
+                         Math.max(reading.length, romajiSpoken.length);
+      return lengthRatio > 0.8 && (
+        reading.includes(romajiSpoken) || 
+        romajiSpoken.includes(reading)
       );
     });
     
-    if (hasPartialMatch) {
-      setResult('close');
-      setScore(prev => prev + 0.5);
-      return;
-    }
-
-    // Check similarity with Levenshtein distance for close pronunciations
-    const hasCloseMatch = validReadings.some(reading => {
-      const distance = levenshteinDistance(reading, normalizedSpoken);
-      const maxLength = Math.max(reading.length, normalizedSpoken.length);
-      const similarity = 1 - (distance / maxLength);
-      return similarity > 0.7;
-    });
-
-    if (hasCloseMatch) {
+    if (hasPhoneticMatch) {
       setResult('close');
       setScore(prev => prev + 0.5);
       return;
@@ -536,59 +553,59 @@ const Training: React.FC = () => {
       <div className="training-container">
         {trainingMode === 'kanji' && currentKanji && (
           <>
-            <div className="prompt-section">
-              <h2>Draw this kanji:</h2>
-              <div className="kanji-prompt">
-                <div className="meanings-prompt">
-                  {currentKanji.kanji.kanji_meanings?.slice(0, 3).map(m => m.meaning).join(', ')}
-                </div>
-                {currentKanji.kanji.on_readings && currentKanji.kanji.on_readings.length > 0 && (
-                  <div className="readings-prompt">
-                    On: {currentKanji.kanji.on_readings.slice(0, 2).join('、')}
-                  </div>
-                )}
-                {currentKanji.kanji.kun_readings && currentKanji.kanji.kun_readings.length > 0 && (
-                  <div className="readings-prompt">
-                    Kun: {currentKanji.kanji.kun_readings.slice(0, 2).join('、')}
-                  </div>
-                )}
-                {currentKanji.kanji.stroke_count && (
-                  <div className="hint">
-                    {currentKanji.kanji.stroke_count} strokes
-                  </div>
-                )}
-              </div>
+        <div className="prompt-section">
+          <h2>Draw this kanji:</h2>
+          <div className="kanji-prompt">
+            <div className="meanings-prompt">
+              {currentKanji.kanji.kanji_meanings?.slice(0, 3).map(m => m.meaning).join(', ')}
             </div>
-
-            <div className="drawing-section">
-              <div className="canvas-container">
-                <ReactSketchCanvas
-                  ref={canvasRef}
-                  width="400px"
-                  height="400px"
-                  strokeWidth={20}
-                  strokeColor="#000000"
-                  canvasColor="#ffffff"
-                  style={{
-                    border: '2px solid #333',
-                    borderRadius: '8px',
-                  }}
-                />
+            {currentKanji.kanji.on_readings && currentKanji.kanji.on_readings.length > 0 && (
+              <div className="readings-prompt">
+                On: {currentKanji.kanji.on_readings.slice(0, 2).join('、')}
               </div>
-
-              <div className="controls">
-                <button onClick={handleClear} className="clear-button">
-                  Clear
-                </button>
-                <button 
-                  onClick={handleSubmit} 
-                  className="submit-button"
-                  disabled={checking}
-                >
-                  {checking ? 'Checking...' : 'Submit'}
-                </button>
+            )}
+            {currentKanji.kanji.kun_readings && currentKanji.kanji.kun_readings.length > 0 && (
+              <div className="readings-prompt">
+                Kun: {currentKanji.kanji.kun_readings.slice(0, 2).join('、')}
               </div>
-            </div>
+            )}
+            {currentKanji.kanji.stroke_count && (
+              <div className="hint">
+                {currentKanji.kanji.stroke_count} strokes
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="drawing-section">
+          <div className="canvas-container">
+            <ReactSketchCanvas
+              ref={canvasRef}
+              width="400px"
+              height="400px"
+              strokeWidth={20}
+              strokeColor="#000000"
+              canvasColor="#ffffff"
+              style={{
+                border: '2px solid #333',
+                borderRadius: '8px',
+              }}
+            />
+          </div>
+
+          <div className="controls">
+            <button onClick={handleClear} className="clear-button">
+              Clear
+            </button>
+            <button 
+              onClick={handleSubmit} 
+              className="submit-button"
+              disabled={checking}
+            >
+              {checking ? 'Checking...' : 'Submit'}
+            </button>
+          </div>
+        </div>
           </>
         )}
 
@@ -765,7 +782,7 @@ const Training: React.FC = () => {
                   Your pronunciation was close! +0.5 points
                 </p>
                 <div className="result-actions">
-                  <button onClick={() => setResult(null)} className="retry-button">
+                  <button onClick={() => { setResult(null); setTranscript(''); }} className="retry-button">
                     Try Again
                   </button>
                   <button onClick={handleNext} className="next-button">
@@ -783,7 +800,7 @@ const Training: React.FC = () => {
                   </span>
                 </div>
                 <div className="result-actions">
-                  <button onClick={() => setResult(null)} className="retry-button">
+                  <button onClick={() => { setResult(null); setTranscript(''); }} className="retry-button">
                     Try Again
                   </button>
                   <button onClick={handleNext} className="skip-button">
