@@ -1,0 +1,31 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data
+data/*
+!data/.gitkeep
+!data/README.md
+
+# Models
+models/*
+!models/.gitkeep
+!models/README.md
+
+# Logs
+logs/
+*.log
+runs/
+
+# Environment
+.env
+.env.local
+

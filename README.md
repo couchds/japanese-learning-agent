@@ -227,6 +227,7 @@ Runs the React app on http://localhost:3000
 - Kanji Dictionary - Browse and search kanji characters
 - Draw Kanji - Draw kanji characters with mouse, touchpad, or stylus for handwriting recognition (requires recognition service)
 - Pronunciation Training - Record and manage pronunciation data for custom speech model training
+- Test Model - Test your trained custom speech recognition model with live audio recordings
 
 ## Custom Speech Model Training
 

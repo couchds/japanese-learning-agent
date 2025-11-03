@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import * as wanakana from 'wanakana';
 import { useAuth } from '../context/AuthContext';
 import './PronunciationTraining.css';
@@ -21,6 +22,21 @@ interface Recording {
   created_at: string;
 }
 
+interface ModelInfo {
+  is_trained: boolean;
+  num_classes: number;
+  class_names: string[];
+  accuracy: number | null;
+}
+
+interface TrainingStatus {
+  is_training: boolean;
+  status: string;
+  progress: number;
+  message: string;
+  accuracy: number | null;
+}
+
 const PronunciationTraining: React.FC = () => {
   const { token } = useAuth();
   const [words, setWords] = useState<WordData[]>([]);
@@ -31,12 +47,19 @@ const PronunciationTraining: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(null);
   
+  // Custom model state
+  const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
+  const [trainingStatus, setTrainingStatus] = useState<TrainingStatus | null>(null);
+  const [useCustomModel, setUseCustomModel] = useState(false);
+  const [showModelPanel, setShowModelPanel] = useState(false);
+  
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (token) {
       fetchWords();
+      fetchModelInfo();
     }
   }, [token]);
 
@@ -45,6 +68,17 @@ const PronunciationTraining: React.FC = () => {
       fetchRecordings(selectedWord.id);
     }
   }, [selectedWord, token]);
+
+  // Poll for training status when training
+  useEffect(() => {
+    if (trainingStatus?.is_training) {
+      const interval = setInterval(() => {
+        fetchModelInfo();
+      }, 2000); // Poll every 2 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [trainingStatus?.is_training]);
 
   const fetchWords = async () => {
     try {
@@ -212,6 +246,64 @@ const PronunciationTraining: React.FC = () => {
     }
   };
 
+  // Custom model functions
+  const fetchModelInfo = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/info');
+      if (response.ok) {
+        const data = await response.json();
+        setModelInfo(data.model);
+        setTrainingStatus(data.training);
+      }
+    } catch (err) {
+      console.error('Error fetching model info:', err);
+    }
+  };
+
+  const startTraining = async () => {
+    if (!window.confirm('Start training custom model? This may take 10-30 minutes.')) {
+      return;
+    }
+
+    try {
+      // First export data
+      const exportResponse = await fetch('http://localhost:5001/export-data', {
+        method: 'POST'
+      });
+
+      if (!exportResponse.ok) {
+        throw new Error('Failed to export training data');
+      }
+
+      const exportData = await exportResponse.json();
+      console.log('Data exported:', exportData);
+
+      // Start training with optimized parameters for small datasets
+      const trainResponse = await fetch('http://localhost:5001/train', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          epochs: 100,           // More epochs for small dataset
+          batch_size: 16,        // Smaller batches
+          model: 'lightweight',  // Simpler model to avoid overfitting
+          augment: true,         // Enable augmentation for data diversity
+          val_split: 0.1         // Only 10% validation to maximize training data
+        })
+      });
+
+      if (!trainResponse.ok) {
+        throw new Error('Failed to start training');
+      }
+
+      alert('Training started! Check the Model Status panel for progress.');
+      setShowModelPanel(true);
+      fetchModelInfo();
+    } catch (err) {
+      console.error('Error starting training:', err);
+      alert('Failed to start training. Make sure the speech model API is running.');
+    }
+  };
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -237,8 +329,107 @@ const PronunciationTraining: React.FC = () => {
 
   return (
     <div className="pronunciation-training-page">
-      <h1>Pronunciation Training</h1>
-      <p className="subtitle">Record and manage pronunciation data for words from your resources</p>
+      <div className="page-header">
+        <div>
+          <h1>Pronunciation Training</h1>
+          <p className="subtitle">Record and manage pronunciation data for words from your resources</p>
+        </div>
+        <div className="header-actions">
+          <Link to="/test-model" className="btn-link">
+            <button className="btn-test-page">
+              🧪 Test Model
+            </button>
+          </Link>
+          <button 
+            onClick={() => setShowModelPanel(!showModelPanel)}
+            className="btn-toggle-model"
+          >
+            {showModelPanel ? 'Hide' : 'Show'} Custom Model
+          </button>
+          <button 
+            onClick={startTraining}
+            className="btn-train-model"
+            disabled={trainingStatus?.is_training}
+          >
+            {trainingStatus?.is_training ? 'Training...' : 'Train Custom Model'}
+          </button>
+        </div>
+      </div>
+
+      {showModelPanel && (
+        <div className="model-panel">
+          <h3>Custom Speech Model</h3>
+          
+          {modelInfo?.is_trained ? (
+            <div className="model-info">
+              <div className="info-item">
+                <span className="label">Status:</span>
+                <span className="value success">✓ Trained</span>
+              </div>
+              <div className="info-item">
+                <span className="label">Vocabulary:</span>
+                <span className="value">{modelInfo.num_classes} words</span>
+              </div>
+              {modelInfo.accuracy && (
+                <div className="info-item">
+                  <span className="label">Accuracy:</span>
+                  <span className="value">{modelInfo.accuracy.toFixed(1)}%</span>
+                </div>
+              )}
+              {modelInfo.accuracy && modelInfo.accuracy < 70 && (
+                <div className="warning-message">
+                  ⚠️ Low accuracy! For better results, record 15-20 examples per word. 
+                  Current data is insufficient for reliable recognition.
+                </div>
+              )}
+              <div className="info-item">
+                <label className="toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={useCustomModel}
+                    onChange={(e) => setUseCustomModel(e.target.checked)}
+                  />
+                  <span>Use custom model for recognition</span>
+                </label>
+              </div>
+            </div>
+          ) : (
+            <div className="model-info">
+              <p>No trained model yet. Record some words and click "Train Custom Model" to get started!</p>
+              <div className="info-tip">
+                💡 <strong>Tip:</strong> Record at least 15-20 examples per word for good accuracy!
+              </div>
+            </div>
+          )}
+
+          {trainingStatus?.is_training && (
+            <div className="training-progress">
+              <div className="progress-header">
+                <span>{trainingStatus.message}</span>
+                <span>{trainingStatus.progress}%</span>
+              </div>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{ width: `${trainingStatus.progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {trainingStatus?.status === 'completed' && trainingStatus.accuracy && (
+            <div className="training-complete">
+              ✓ Training completed! Accuracy: {trainingStatus.accuracy.toFixed(1)}%
+            </div>
+          )}
+
+          {trainingStatus?.status === 'failed' && (
+            <div className="training-error">
+              ✗ Training failed. Check console for details.
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="training-container">
         {/* Left panel: Word search */}

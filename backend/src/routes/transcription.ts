@@ -19,34 +19,33 @@ router.post('/', upload.single('audio'), async (req: Request, res: Response) => 
     if (!req.file) {
       return res.status(400).json({ error: 'No audio file provided' });
     }
-
     // Create debug directory if it doesn't exist
     const debugDir = path.join(__dirname, '../../debug-audio');
     if (!fs.existsSync(debugDir)) {
       fs.mkdirSync(debugDir, { recursive: true });
     }
 
-        // Save original WebM file
-        const timestamp = Date.now();
-        const webmPath = path.join(debugDir, `original-${timestamp}.webm`);
-        fs.writeFileSync(webmPath, req.file.buffer);
-        console.log(`Saved original WebM to: ${webmPath} (${req.file.buffer.length} bytes)`);
+    // Save original WebM file
+    const timestamp = Date.now();
+    const webmPath = path.join(debugDir, `original-${timestamp}.webm`);
+    fs.writeFileSync(webmPath, req.file.buffer);
+    console.log(`Saved original WebM to: ${webmPath} (${req.file.buffer.length} bytes)`);
 
-        // Convert audio to PCM 16kHz mono for Vosk
-        const audioBuffer = await convertAudioToPCM(req.file.buffer);
-        console.log(`Audio converted: ${audioBuffer.length} bytes`);
-        
-        // Check if audio is too short (might indicate over-aggressive silence removal)
-        const durationSeconds = audioBuffer.length / (16000 * 2); // 16kHz, 16-bit (2 bytes)
-        console.log(`Audio duration: ${durationSeconds.toFixed(2)} seconds`);
-        
-        if (audioBuffer.length < 1000) {
-          console.warn('WARNING: Audio buffer is very small, might be all silence!');
-        }
-        
-        if (durationSeconds < 0.3) {
-          console.warn('WARNING: Audio is very short (<0.3s), may not contain full word');
-        }
+    // Convert audio to PCM 16kHz mono for Vosk
+    const audioBuffer = await convertAudioToPCM(req.file.buffer);
+    console.log(`Audio converted: ${audioBuffer.length} bytes`);
+    
+    // Check if audio is too short
+    const durationSeconds = audioBuffer.length / (16000 * 2); // 16kHz, 16-bit (2 bytes)
+    console.log(`Audio duration: ${durationSeconds.toFixed(2)} seconds`);
+    
+    if (audioBuffer.length < 1000) {
+      console.warn('WARNING: Audio buffer is very small, might be all silence!');
+    }
+    
+    if (durationSeconds < 0.3) {
+      console.warn('WARNING: Audio is very short (<0.3s), may not contain full word');
+    }
 
     // Also save as WAV for easier listening
     const wavPath = path.join(debugDir, `converted-${timestamp}.wav`);
@@ -54,7 +53,8 @@ router.post('/', upload.single('audio'), async (req: Request, res: Response) => 
     console.log(`Saved converted WAV to: ${wavPath}`);
 
     // Connect to Vosk WebSocket server
-    const ws = new WebSocket('ws://localhost:2700');
+    const voskServerUrl = process.env.VOSK_SERVER_URL || 'ws://localhost:2700';
+    const ws = new WebSocket(voskServerUrl);
 
     let transcript = '';
     let partialTranscript = '';
