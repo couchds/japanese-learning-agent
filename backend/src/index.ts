@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import resourcesRoutes from './routes/resources';
 import recognizeRoutes from './routes/recognize';
 import transcriptionRoutes from './routes/transcription';
+import pronunciationsRoutes from './routes/pronunciations';
 import { authenticateToken } from './middleware/auth';
 
 dotenv.config({ path: '../.env' });
@@ -30,6 +31,7 @@ app.use('/api/words', authenticateToken, wordsRoutes);
 app.use('/api/resources', authenticateToken, resourcesRoutes);
 app.use('/api/recognize', authenticateToken, recognizeRoutes);
 app.use('/api/transcribe', authenticateToken, transcriptionRoutes);
+app.use('/api/pronunciations', authenticateToken, pronunciationsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

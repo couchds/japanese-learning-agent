@@ -92,10 +92,11 @@ const Training: React.FC = () => {
   const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [isListening, setIsListening] = useState(false);
-  const [isWarmingUp, setIsWarmingUp] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [retryCount, setRetryCount] = useState(0);
   const maxRetries = 2;
+  const [useCustomModel, setUseCustomModel] = useState(false);
+  const [modelInfo, setModelInfo] = useState<{is_trained: boolean, num_classes: number} | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   
@@ -104,6 +105,23 @@ const Training: React.FC = () => {
       fetchResource();
     }
   }, [token, id]);
+
+  // Fetch custom model info
+  useEffect(() => {
+    fetchModelInfo();
+  }, []);
+
+  const fetchModelInfo = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/info');
+      if (response.ok) {
+        const data = await response.json();
+        setModelInfo(data.model);
+      }
+    } catch (err) {
+      console.error('Error fetching model info:', err);
+    }
+  };
 
   // Reset state when training mode changes
   useEffect(() => {
@@ -405,7 +423,6 @@ const Training: React.FC = () => {
 
       mediaRecorder.onstop = async () => {
         setIsListening(false);
-        setIsWarmingUp(false);
         isStartingRecognition.current = false;
 
         // Stop all tracks
@@ -427,33 +444,22 @@ const Training: React.FC = () => {
         await transcribeAudio(audioBlob);
       };
 
-      // Start recording immediately (to warm up the hardware)
+      // Start recording immediately
       mediaRecorder.start();
       console.log('Recording started at:', Date.now());
-      
-      // Show "Get ready..." for 1000ms to let microphone warm up
-      setIsWarmingUp(true);
-      
-      setTimeout(() => {
-        // Now the user should speak
-        console.log('Warm-up complete, user should speak now');
-        setIsWarmingUp(false);
-      }, 1000);
-
-      // Auto-stop after 5 seconds total (1s warmup + 4s recording)
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          console.log('Stopping recording at:', Date.now());
-          mediaRecorderRef.current.stop();
-        }
-      }, 5000);
 
     } catch (error) {
       setIsListening(false);
-      setIsWarmingUp(false);
       isStartingRecognition.current = false;
       console.error('Error starting audio recording:', error);
       alert('Could not access microphone. Please grant microphone permission.');
+    }
+  };
+
+  const stopListening = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('Stopping recording at:', Date.now());
+      mediaRecorderRef.current.stop();
     }
   };
 
@@ -464,22 +470,49 @@ const Training: React.FC = () => {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'audio.webm');
 
-      const response = await fetch('http://localhost:3001/api/transcribe', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('Transcription failed');
-      }
-
-      const data = await response.json();
-      const transcriptText = data.transcript || '';
+      // Choose endpoint based on model selection
+      let transcriptText = '';
       
-      console.log('Transcription received:', transcriptText, '(length:', transcriptText.length, ')');
+      if (useCustomModel && modelInfo?.is_trained) {
+        // Use custom model
+        formData.append('top_k', '3');
+        
+        const response = await fetch('http://localhost:5001/predict', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Custom model prediction failed');
+        }
+
+        const data = await response.json();
+        
+        if (data.success && data.predictions && data.predictions.length > 0) {
+          // Use top prediction as transcript
+          transcriptText = data.predictions[0].word;
+          console.log('Custom model prediction:', transcriptText, 
+            `(confidence: ${(data.predictions[0].confidence * 100).toFixed(1)}%)`);
+        }
+      } else {
+        // Use Vosk
+        const response = await fetch('http://localhost:3001/api/transcribe', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error('Transcription failed');
+        }
+
+        const data = await response.json();
+        transcriptText = data.transcript || '';
+        
+        console.log('Vosk transcription received:', transcriptText, '(length:', transcriptText.length, ')');
+      }
       
       setIsListening(false);
       
@@ -672,34 +705,60 @@ const Training: React.FC = () => {
             </div>
 
             <div className="speech-section">
+              {modelInfo?.is_trained && (
+                <div className="model-selector">
+                  <label className="model-toggle">
+                    <input
+                      type="checkbox"
+                      checked={useCustomModel}
+                      onChange={(e) => setUseCustomModel(e.target.checked)}
+                    />
+                    <span>Use Custom Model ({modelInfo.num_classes} words trained)</span>
+                  </label>
+                  {!useCustomModel && (
+                    <div className="model-hint">Currently using Vosk (all Japanese words)</div>
+                  )}
+                </div>
+              )}
+              
               <div className="speech-instructions">
                 {isListening ? (
                   <div className="listening-prompt">
-                    {isWarmingUp ? (
-                      <>⏳ <strong>Get ready...</strong> (warming up mic)</>
-                    ) : (
-                      <>🎤 <strong>Speak NOW!</strong> (4 seconds)</>
-                    )}
+                    🎤 <strong>Recording...</strong> Click Stop when done
                     {retryCount > 0 && <div className="retry-indicator">Attempt {retryCount + 1} of {maxRetries + 1}</div>}
                   </div>
                 ) : (
                   <div className="speech-hint">
-                    Click microphone → Wait for "Speak NOW!" → Say the word LOUDLY and clearly
+                    Click "Go" to start recording, then say the word clearly
                   </div>
                 )}
               </div>
 
-              <button 
-                onClick={startListening} 
-                className={`microphone-button ${isListening ? 'listening' : ''}`}
-                disabled={!!result || isListening}
-              >
-                {isListening ? '🎤 Listening...' : '🎤 Click to Speak'}
-              </button>
+              <div className="speech-controls">
+                {!isListening ? (
+                  <button 
+                    onClick={startListening} 
+                    className="go-button"
+                    disabled={!!result}
+                  >
+                    ▶ Go
+                  </button>
+                ) : (
+                  <button 
+                    onClick={stopListening}
+                    className="stop-button"
+                  >
+                    ⏹ Stop
+                  </button>
+                )}
+              </div>
               
               {transcript && (
                 <div className="transcript-display">
                   <strong>You said:</strong> {transcript}
+                  {useCustomModel && modelInfo?.is_trained && (
+                    <span className="model-badge">Custom Model</span>
+                  )}
                 </div>
               )}
             </div>

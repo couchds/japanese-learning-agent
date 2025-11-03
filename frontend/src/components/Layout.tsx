@@ -43,6 +43,9 @@ const Layout: React.FC = () => {
               )}
             </li>
             <li>
+              <Link to="/pronunciation">Pronunciation Training</Link>
+            </li>
+            <li>
               <Link to="/resources">Resources</Link>
             </li>
           </ul>

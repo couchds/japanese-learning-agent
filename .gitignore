@@ -24,5 +24,9 @@ yarn-error.log*
 /backend/uploads/*
 !/backend/uploads/.gitkeep
 
+# Debug audio files
+/backend/debug-audio/*
+!/backend/debug-audio/.gitkeep
+
 # Vosk models
 vosk-models
