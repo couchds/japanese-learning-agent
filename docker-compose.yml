@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: japanese-learning-db
+    environment:
+      POSTGRES_USER: ${PGUSER}
+      POSTGRES_PASSWORD: ${PGPASSWORD}
+      POSTGRES_DB: ${PGDATABASE}
+    ports:
+      - "${PGPORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - japanese-learning-network
+
+  # Backend API (Node.js/Express)
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: japanese-learning-backend
+    environment:
+      DATABASE_URL: postgresql://${PGUSER}:${PGPASSWORD}@postgres:5432/${PGDATABASE}
+      PORT: ${PORT:-3001}
+      JWT_SECRET: ${JWT_SECRET}
+      RECOGNITION_SERVICE_URL: http://recognition_service:5000
+      VOSK_SERVER_URL: ws://vosk-server:2700
+      NODE_ENV: production
+    ports:
+      - "${PORT:-3001}:3001"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/debug-audio:/app/debug-audio
+      - ./kanjidic2.xml:/app/kanjidic2.xml:ro
+      - ./JMdict_e:/app/JMdict_e:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      recognition_service:
+        condition: service_healthy
+      vosk-server:
+        condition: service_started
+    networks:
+      - japanese-learning-network
+    restart: unless-stopped
+
+  # Frontend (React)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: http://localhost:3001
+    container_name: japanese-learning-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - japanese-learning-network
+    restart: unless-stopped
+
+  # Recognition Service (Python/Flask)
+  recognition_service:
+    build:
+      context: ./recognition_service
+      dockerfile: Dockerfile
+    container_name: japanese-learning-recognition
+    environment:
+      RECOGNITION_SERVICE_PORT: 5000
+      FLASK_DEBUG: "false"
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - japanese-learning-network
+    restart: unless-stopped
+
+  # Vosk Speech Recognition Server
+  vosk-server:
+    image: alphacep/kaldi-en:latest
+    container_name: japanese-learning-vosk
+    ports:
+      - "2700:2700"
+    networks:
+      - japanese-learning-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  japanese-learning-network:
+    driver: bridge
+

@@ -11,7 +11,32 @@ For example, I've recently been playing _Dragon Quest III_. So, in the applicati
 
 ## Setup
 
-### Prerequisites
+### Docker Setup (Recommended)
+
+The easiest way to run the application is using Docker. See **[DOCKER.md](./DOCKER.md)** for detailed instructions.
+
+**Quick Start:**
+```bash
+# 1. Copy environment file and configure
+cp docker.env.example .env
+# Edit .env and set PGPASSWORD and JWT_SECRET
+
+# 2. Build and start all services
+docker-compose up -d
+
+# 3. Initialize database (automated script)
+./scripts/docker-init-db.sh
+```
+
+Access the application at http://localhost:3000
+
+See **[DOCKER.md](./DOCKER.md)** for detailed Docker documentation, troubleshooting, and advanced usage.
+
+### Manual Setup
+
+If you prefer to run without Docker:
+
+#### Prerequisites
 - **PostgreSQL** 12 or higher
 - **Node.js** 16 or higher
 - **Python** 3.8 or higher

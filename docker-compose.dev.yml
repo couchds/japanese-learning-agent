@@ -1,0 +1,46 @@
+version: '3.8'
+
+# Development docker-compose override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+      target: development
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/prisma:/app/prisma:ro
+      - ./backend/uploads:/app/uploads
+      - ./backend/debug-audio:/app/debug-audio
+      - backend_node_modules:/app/node_modules
+    environment:
+      NODE_ENV: development
+    command: npm run dev
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - frontend_node_modules:/app/node_modules
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - CHOKIDAR_USEPOLLING=true
+    command: npm start
+    ports:
+      - "3000:3000"
+
+  recognition_service:
+    environment:
+      FLASK_DEBUG: "true"
+    volumes:
+      - ./recognition_service:/app:ro
+
+volumes:
+  backend_node_modules:
+  frontend_node_modules:
+

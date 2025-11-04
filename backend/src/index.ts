@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import kanjiRoutes from './routes/kanji';
 import wordsRoutes from './routes/words';
 import authRoutes from './routes/auth';
@@ -10,7 +11,10 @@ import transcriptionRoutes from './routes/transcription';
 import pronunciationsRoutes from './routes/pronunciations';
 import { authenticateToken } from './middleware/auth';
 
-dotenv.config({ path: '../.env' });
+// Load environment variables - check multiple possible locations
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '../../.env') });
+}
 
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
