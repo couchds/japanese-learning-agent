@@ -1,0 +1,14 @@
+environment  = "dev"
+project_name = "japanese-learning"
+
+db_name              = "japanese_learning"
+db_allocated_storage = 20
+
+enable_deletion_protection = false
+backup_retention_period    = 7
+
+gcp_project_id  = "your-gcp-project-id"
+gcp_region      = "us-central1"
+gcp_bucket_name = "your-globally-unique-bucket-name"
+gcp_db_tier     = "db-g1-small"
+gcp_db_password = ""
