@@ -17,7 +17,7 @@ const Layout: React.FC = () => {
   return (
     <div className="layout">
       <aside className="sidebar">
-        <h2>Japanese Learning</h2>
+        <h2>Yomunami</h2>
         <nav>
           <ul>
             <li>

@@ -43,7 +43,7 @@ const Signup: React.FC = () => {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h1>Japanese Learning Agent</h1>
+        <h1>Yomunami</h1>
         <h2>Sign Up</h2>
         
         {error && <div className="error-message">{error}</div>}

@@ -3,7 +3,69 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: 
+    linear-gradient(to bottom, 
+      #e8f4f8 0%,
+      #e8f4f8 50%,
+      #3ba5c9 50%,
+      #3ba5c9 100%
+    );
+  position: relative;
+  overflow: hidden;
+}
+
+/* Cartoon-style wave in the middle */
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 200%;
+  height: 120px;
+  transform: translateY(-60px);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='waveGrad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%234db8d8;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%233ba5c9;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M0,60 Q300,30 600,60 T1200,60 L1200,120 L0,120 Z' fill='url(%23waveGrad)'/%3E%3Cpath d='M0,60 Q300,30 600,60 T1200,60' stroke='%23ffffff' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") repeat-x;
+  background-size: 1200px 120px;
+  animation: wave-move 25s linear infinite;
+}
+
+.login-page::after {
+  content: '';
+  position: absolute;
+  top: 60px;
+  right: 80px;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle, #ffd966 0%, #ffeb99 50%, rgba(255, 235, 153, 0) 70%);
+  border-radius: 50%;
+  box-shadow: 
+    0 0 20px rgba(255, 217, 102, 0.5),
+    0 0 40px rgba(255, 217, 102, 0.3),
+    inset 0 -10px 20px rgba(255, 200, 50, 0.3);
+  animation: sun-glow 4s ease-in-out infinite;
+}
+
+@keyframes sun-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(255, 217, 102, 0.5),
+      0 0 40px rgba(255, 217, 102, 0.3),
+      inset 0 -10px 20px rgba(255, 200, 50, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 30px rgba(255, 217, 102, 0.6),
+      0 0 60px rgba(255, 217, 102, 0.4),
+      inset 0 -10px 20px rgba(255, 200, 50, 0.3);
+  }
+}
+
+@keyframes wave-move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 1200px 0;
+  }
 }
 
 .login-container {
@@ -13,6 +75,8 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 400px;
+  position: relative;
+  z-index: 10;
 }
 
 .login-container h1 {
@@ -62,24 +126,25 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #4fc3f7;
 }
 
 button[type="submit"] {
   width: 100%;
   padding: 12px;
-  background-color: #667eea;
+  background: linear-gradient(135deg, #81d4fa 0%, #4fc3f7 100%);
   color: white;
   border: none;
   border-radius: 4px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 button[type="submit"]:hover:not(:disabled) {
-  background-color: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 195, 247, 0.4);
 }
 
 button[type="submit"]:disabled {
@@ -94,7 +159,7 @@ button[type="submit"]:disabled {
 }
 
 .signup-link a {
-  color: #667eea;
+  color: #4fc3f7;
   text-decoration: none;
   font-weight: 600;
 }

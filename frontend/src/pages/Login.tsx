@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
@@ -29,7 +29,7 @@ const Login: React.FC = () => {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h1>Japanese Learning Agent</h1>
+        <h1>Yomunami</h1>
         <h2>Login</h2>
         
         {error && <div className="error-message">{error}</div>}
