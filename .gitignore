@@ -30,3 +30,6 @@ yarn-error.log*
 
 # Vosk models
 vosk-models
+
+# Terraform (for now)
+terraform
