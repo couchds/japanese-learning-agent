@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
@@ -26,10 +26,16 @@ const Login: React.FC = () => {
     }
   };
 
+  // Callback to set username with additional debugging. 
+  // Log the username after the callback is executed (this is asyndc)
+  const setUsernameCallback = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUsername(e.target.value);
+  };
+
   return (
     <div className="login-page">
       <div className="login-container">
-        <h1>Japanese Learning Agent</h1>
+        <h1>Yomunami</h1>
         <h2>Login</h2>
         
         {error && <div className="error-message">{error}</div>}
@@ -41,7 +47,7 @@ const Login: React.FC = () => {
               type="text"
               id="username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={setUsernameCallback}
               required
               autoFocus
             />
