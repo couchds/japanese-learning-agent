@@ -26,12 +26,6 @@ const Login: React.FC = () => {
     }
   };
 
-  // Callback to set username with additional debugging. 
-  // Log the username after the callback is executed (this is asyndc)
-  const setUsernameCallback = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUsername(e.target.value);
-  };
-
   return (
     <div className="login-page">
       <div className="login-container">
@@ -47,7 +41,7 @@ const Login: React.FC = () => {
               type="text"
               id="username"
               value={username}
-              onChange={setUsernameCallback}
+              onChange={(e) => setUsername(e.target.value)}
               required
               autoFocus
             />
