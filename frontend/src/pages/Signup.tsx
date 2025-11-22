@@ -9,6 +9,7 @@ const Signup: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
 
     // Validation
     if (password.length < 8) {
@@ -28,11 +30,21 @@ const Signup: React.FC = () => {
       return;
     }
 
+    if (!email) {
+      setError('Email is required');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await signup(username, password, email || undefined);
-      navigate('/');
+      await signup(username, password, email);
+      setSuccess('Account created! Please check your email to verify your account before logging in.');
+      // Clear form
+      setUsername('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
     } finally {
@@ -47,6 +59,7 @@ const Signup: React.FC = () => {
         <h2>Sign Up</h2>
         
         {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
         
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -62,12 +75,13 @@ const Signup: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email (optional)</label>
+            <label htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
             />
           </div>
 

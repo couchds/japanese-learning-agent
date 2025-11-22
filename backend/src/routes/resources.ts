@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { upload } from '../config/multer';
+import { upload, uploadToGCS } from '../config/multer';
 
 const router = Router();
 
@@ -105,8 +105,11 @@ router.post('/', upload.single('image'), async (req: Request, res: Response) => 
       return res.status(400).json({ error: 'Invalid type' });
     }
 
-    // Handle uploaded file
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    // Handle uploaded file - upload to GCS if present
+    let imagePath = null;
+    if (req.file) {
+      imagePath = await uploadToGCS(req.file, userId);
+    }
 
     const resource = await prisma.resources.create({
       data: {

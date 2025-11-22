@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useState, useEffect } from 'react';
 import * as wanakana from 'wanakana';
 import { useAuth } from '../context/AuthContext';
@@ -30,7 +31,7 @@ const Kanji: React.FC = () => {
   const fetchKanji = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/kanji?limit=2500`, {
+      const response = await fetch(`${API_URL}/api/kanji?limit=2500`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

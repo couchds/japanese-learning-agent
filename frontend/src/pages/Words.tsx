@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useState, useEffect } from 'react';
 import * as wanakana from 'wanakana';
 import { useAuth } from '../context/AuthContext';
@@ -32,7 +33,7 @@ const Words: React.FC = () => {
   const fetchWords = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/words?limit=2000`, {
+      const response = await fetch(`${API_URL}/api/words?limit=2000`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

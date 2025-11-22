@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import API_URL from '../config';
 
 interface User {
   id: number;
@@ -44,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/api/auth/verify', {
+        const response = await fetch(`${API_URL}/api/auth/verify`, {
           headers: {
             'Authorization': `Bearer ${storedToken}`
           }
@@ -72,12 +73,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/login', {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ login: username, password })
     });
 
     if (!response.ok) {
@@ -92,7 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signup = async (username: string, password: string, email?: string) => {
-    const response = await fetch('http://localhost:3001/api/auth/signup', {
+    const response = await fetch(`${API_URL}/api/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -105,10 +106,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error(error.error || 'Signup failed');
     }
 
-    const data = await response.json();
-    setUser(data.user);
-    setToken(data.token);
-    localStorage.setItem('token', data.token);
+    // Don't log user in - they need to verify email first
+    // Backend will send verification email
   };
 
   const logout = () => {

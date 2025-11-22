@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import * as wanakana from 'wanakana';
@@ -83,7 +84,7 @@ const PronunciationTraining: React.FC = () => {
   const fetchWords = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/words?limit=2000&in_resources=true`, {
+      const response = await fetch(`${API_URL}/api/words?limit=2000&in_resources=true`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -102,7 +103,7 @@ const PronunciationTraining: React.FC = () => {
 
   const fetchRecordings = async (entryId: number) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/pronunciations?entry_id=${entryId}`, {
+      const response = await fetch(`${API_URL}/api/pronunciations?entry_id=${entryId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -176,7 +177,7 @@ const PronunciationTraining: React.FC = () => {
       formData.append('entry_id', selectedWord.id.toString());
       formData.append('is_reference', isReference.toString());
 
-      const response = await fetch('http://localhost:3001/api/pronunciations', {
+      const response = await fetch(`${API_URL}/api/pronunciations`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -202,7 +203,7 @@ const PronunciationTraining: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this recording?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/pronunciations/${recordingId}`, {
+      const response = await fetch(`${API_URL}/api/pronunciations/${recordingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -224,7 +225,7 @@ const PronunciationTraining: React.FC = () => {
 
   const toggleReference = async (recording: Recording) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/pronunciations/${recording.id}`, {
+      const response = await fetch(`${API_URL}/api/pronunciations/${recording.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -536,7 +537,7 @@ const PronunciationTraining: React.FC = () => {
                             {new Date(recording.created_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <audio src={`http://localhost:3001${recording.audio_path}`} controls />
+                        <audio src={`${API_URL}${recording.audio_path}`} controls />
                       </div>
                       <div className="recording-actions">
                         <button

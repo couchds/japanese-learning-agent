@@ -1,8 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { audioUpload } from '../config/audioUpload';
-import fs from 'fs';
-import path from 'path';
+import { audioUpload, uploadAudioToGCS } from '../config/audioUpload';
 
 const router = Router();
 
@@ -23,8 +21,6 @@ router.post('/', audioUpload.single('audio'), async (req: Request, res: Response
 
     // Validation
     if (!entry_id) {
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: 'entry_id is required' });
     }
 
@@ -34,13 +30,11 @@ router.post('/', audioUpload.single('audio'), async (req: Request, res: Response
     });
 
     if (!entry) {
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
       return res.status(404).json({ error: 'Dictionary entry not found' });
     }
 
-    // Store relative path for database
-    const audioPath = `/uploads/pronunciations/${req.file.filename}`;
+    // Upload audio to GCS and get public URL
+    const audioPath = await uploadAudioToGCS(req.file, userId);
 
     // Create pronunciation recording
     const recording = await prisma.pronunciation_recordings.create({
@@ -65,16 +59,6 @@ router.post('/', audioUpload.single('audio'), async (req: Request, res: Response
     res.status(201).json(recording);
   } catch (error) {
     console.error('Error uploading pronunciation:', error);
-    
-    // Clean up file if it was uploaded
-    if (req.file) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error('Error deleting file:', unlinkError);
-      }
-    }
-    
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -238,17 +222,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Recording not found' });
     }
 
-    // Delete the audio file from filesystem
-    try {
-      const audioPath = path.join(process.cwd(), existing.audio_path);
-      if (fs.existsSync(audioPath)) {
-        fs.unlinkSync(audioPath);
-      }
-    } catch (fileError) {
-      console.error('Error deleting audio file:', fileError);
-      // Continue with database deletion even if file deletion fails
-    }
-
+    // Note: Files in GCS will be managed by bucket lifecycle rules
     // Delete from database
     await prisma.pronunciation_recordings.delete({
       where: { id: recordingId }

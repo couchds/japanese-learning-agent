@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useRef, useState } from 'react';
 import { ReactSketchCanvas, ReactSketchCanvasRef } from 'react-sketch-canvas';
 import { useAuth } from '../context/AuthContext';
@@ -75,7 +76,7 @@ const KanjiDraw: React.FC = () => {
         // Send stroke paths directly to backend for recognition
         console.log('Sending paths:', paths);
         
-        const response = await fetch('http://localhost:3001/api/recognize', {
+        const response = await fetch(`${API_URL}/api/recognize`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -113,7 +114,7 @@ const KanjiDraw: React.FC = () => {
   const fetchKanjiDetails = async (kanjiList: string[]) => {
     try {
       const detailsPromises = kanjiList.map(async (kanji) => {
-        const response = await fetch(`http://localhost:3001/api/kanji?search=${encodeURIComponent(kanji)}&limit=1`, {
+        const response = await fetch(`${API_URL}/api/kanji?search=${encodeURIComponent(kanji)}&limit=1`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -10,7 +10,7 @@ import transcriptionRoutes from './routes/transcription';
 import pronunciationsRoutes from './routes/pronunciations';
 import { authenticateToken } from './middleware/auth';
 
-dotenv.config({ path: '../.env' });
+dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
@@ -18,9 +18,6 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
 
 // Public routes
 app.use('/api/auth', authRoutes);
