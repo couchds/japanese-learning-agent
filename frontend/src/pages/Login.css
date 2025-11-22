@@ -103,6 +103,15 @@
   text-align: center;
 }
 
+.success-message {
+  background-color: #e6f4ea;
+  color: #1e7e34;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
 .form-group {
   margin-bottom: 20px;
 }

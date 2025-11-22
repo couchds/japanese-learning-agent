@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -43,7 +44,7 @@ const Resources: React.FC = () => {
   const fetchResources = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/resources', {
+      const response = await fetch(`${API_URL}/api/resources`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -98,7 +99,7 @@ const Resources: React.FC = () => {
         formDataToSend.append('image', selectedImage);
       }
 
-      const response = await fetch('http://localhost:3001/api/resources', {
+      const response = await fetch(`${API_URL}/api/resources`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -136,7 +137,7 @@ const Resources: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -317,7 +318,7 @@ const Resources: React.FC = () => {
                     style={{ cursor: 'pointer' }}
                   >
                     <img 
-                      src={`http://localhost:3001${(resource as any).image_path}`} 
+                      src={`${API_URL}${(resource as any).image_path}`} 
                       alt={resource.name}
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';

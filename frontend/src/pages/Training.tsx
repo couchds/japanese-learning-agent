@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { ReactSketchCanvas, ReactSketchCanvasRef } from 'react-sketch-canvas';
@@ -156,7 +157,7 @@ const Training: React.FC = () => {
   const fetchResource = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/resources/${id}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -220,7 +221,7 @@ const Training: React.FC = () => {
       setAttempts(attempts + 1);
 
       // Send to recognition service
-      const response = await fetch('http://localhost:3001/api/recognize', {
+      const response = await fetch(`${API_URL}/api/recognize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -496,7 +497,7 @@ const Training: React.FC = () => {
         }
       } else {
         // Use Vosk
-        const response = await fetch('http://localhost:3001/api/transcribe', {
+        const response = await fetch(`${API_URL}/api/transcribe`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`

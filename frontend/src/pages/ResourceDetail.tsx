@@ -1,3 +1,4 @@
+import API_URL from '../config';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -143,7 +144,7 @@ const ResourceDetail: React.FC = () => {
   const fetchResource = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/resources/${id}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -184,7 +185,7 @@ const ResourceDetail: React.FC = () => {
         searchTerm = isRomaji ? searchHiragana : wordSearchQuery;
       }
       
-      const response = await fetch(`http://localhost:3001/api/words?search=${encodeURIComponent(searchTerm)}&limit=50`, {
+      const response = await fetch(`${API_URL}/api/words?search=${encodeURIComponent(searchTerm)}&limit=50`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -210,7 +211,7 @@ const ResourceDetail: React.FC = () => {
       
       if (existingWord) {
         // Word exists, increment frequency by 1
-        const response = await fetch(`http://localhost:3001/api/resources/${id}/words/${entryId}`, {
+        const response = await fetch(`${API_URL}/api/resources/${id}/words/${entryId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -224,7 +225,7 @@ const ResourceDetail: React.FC = () => {
         }
       } else {
         // Word doesn't exist, add it with frequency 1
-        const response = await fetch(`http://localhost:3001/api/resources/${id}/words`, {
+        const response = await fetch(`${API_URL}/api/resources/${id}/words`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -254,7 +255,7 @@ const ResourceDetail: React.FC = () => {
     if (!window.confirm('Remove this word from the resource?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}/words/${entryId}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}/words/${entryId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -273,7 +274,7 @@ const ResourceDetail: React.FC = () => {
 
   const updateWordFrequency = async (entryId: number, newFrequency: number) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}/words/${entryId}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}/words/${entryId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -303,7 +304,7 @@ const ResourceDetail: React.FC = () => {
     if (!customWord.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}/custom-words`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}/custom-words`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -330,7 +331,7 @@ const ResourceDetail: React.FC = () => {
 
   const updateCustomWordFrequency = async (wordId: number, newFrequency: number) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}/custom-words/${wordId}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}/custom-words/${wordId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -353,7 +354,7 @@ const ResourceDetail: React.FC = () => {
     if (!window.confirm('Remove this custom word from the resource?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/resources/${id}/custom-words/${wordId}`, {
+      const response = await fetch(`${API_URL}/api/resources/${id}/custom-words/${wordId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -392,7 +393,7 @@ const ResourceDetail: React.FC = () => {
       <div className="resource-header-section">
         {resource.image_path && (
           <img 
-            src={`http://localhost:3001${resource.image_path}`} 
+            src={`${API_URL}${resource.image_path}`} 
             alt={resource.name}
             className="resource-header-image"
           />
