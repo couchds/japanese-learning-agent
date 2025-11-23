@@ -59,6 +59,14 @@
 .image-date {
   color: white;
   font-size: 12px;
+  flex: 1;
+}
+
+.ocr-badge {
+  color: white;
+  font-size: 16px;
+  margin-left: 8px;
+  margin-right: 8px;
 }
 
 .delete-image-btn {
@@ -135,6 +143,113 @@
 .modal-info p {
   margin: 10px 0;
   color: #333;
+}
+
+.ocr-result {
+  margin: 15px 0;
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.ocr-elements {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.element-group {
+  margin-bottom: 10px;
+}
+
+.element-type-header {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.element-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.element-chip {
+  display: inline-block;
+  font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 16px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 2px solid #bbdefb;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  user-select: none;
+}
+
+.element-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.element-chip:active {
+  transform: translateY(0);
+}
+
+.element-chip.matched {
+  background: #c8e6c9;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.element-chip.unmatched {
+  background: #fff3e0;
+  color: #ef6c00;
+  border-color: #ffcc80;
+}
+
+.raw-text-details {
+  margin-top: 20px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.raw-text-details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  user-select: none;
+}
+
+.raw-text-details summary:hover {
+  color: #333;
+}
+
+.ocr-text {
+  font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: #222;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-top: 10px;
+}
+
+.ocr-status {
+  color: #666;
+  font-style: italic;
+  margin: 10px 0;
 }
 
 .modal-delete-btn {

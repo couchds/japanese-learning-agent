@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { upload, uploadToStorage } from '../config/multer';
+import { processImageOCR } from '../services/ocrService';
 
 const router = Router();
 
@@ -57,6 +58,15 @@ router.post('/', upload.single('image'), async (req: Request, res: Response) => 
         }
       }
     });
+
+    // Trigger OCR processing asynchronously (don't wait for it)
+    // Only process if using local storage (GCS support for OCR not yet implemented)
+    if (process.env.USE_GCS !== 'true') {
+      processImageOCR(resourceImage.id, imagePath).catch((error) => {
+        console.error(`[Auto-OCR] Failed for image ${resourceImage.id}:`, error);
+      });
+      console.log(`[Auto-OCR] Triggered for image ${resourceImage.id}`);
+    }
 
     res.status(201).json(resourceImage);
   } catch (error) {

@@ -1,6 +1,7 @@
 import API_URL from '../config';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import KnowledgeSidebar from './KnowledgeSidebar';
 import './ResourceImages.css';
 
 interface ResourceImage {
@@ -8,7 +9,17 @@ interface ResourceImage {
   resource_id: number;
   image_path: string;
   notes?: string;
+  ocr_processed?: boolean;
+  ocr_raw_text?: string;
   created_at: string;
+}
+
+interface OCRElement {
+  id: number;
+  text: string;
+  element_type: string;
+  item_id: number | null;
+  details?: any;
 }
 
 interface ResourceImagesProps {
@@ -21,6 +32,9 @@ const ResourceImages: React.FC<ResourceImagesProps> = ({ resourceId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<ResourceImage | null>(null);
+  const [ocrElements, setOcrElements] = useState<OCRElement[]>([]);
+  const [loadingElements, setLoadingElements] = useState(false);
+  const [selectedElement, setSelectedElement] = useState<OCRElement | null>(null);
 
   useEffect(() => {
     if (token && resourceId) {
@@ -51,6 +65,41 @@ const ResourceImages: React.FC<ResourceImagesProps> = ({ resourceId }) => {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOcrElements = async (imageId: number) => {
+    try {
+      setLoadingElements(true);
+      const response = await fetch(
+        `${API_URL}/api/ocr/elements/${imageId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch OCR elements');
+      }
+
+      const data = await response.json();
+      setOcrElements(data.elements || []);
+    } catch (err) {
+      console.error('Error fetching OCR elements:', err);
+      setOcrElements([]);
+    } finally {
+      setLoadingElements(false);
+    }
+  };
+
+  const handleImageClick = (image: ResourceImage) => {
+    setSelectedImage(image);
+    if (image.ocr_processed) {
+      fetchOcrElements(image.id);
+    } else {
+      setOcrElements([]);
     }
   };
 
@@ -111,7 +160,7 @@ const ResourceImages: React.FC<ResourceImagesProps> = ({ resourceId }) => {
           <div 
             key={image.id} 
             className="image-item"
-            onClick={() => setSelectedImage(image)}
+            onClick={() => handleImageClick(image)}
           >
             <img 
               src={`${API_URL}${image.image_path}`} 
@@ -120,6 +169,9 @@ const ResourceImages: React.FC<ResourceImagesProps> = ({ resourceId }) => {
             />
             <div className="image-overlay">
               <span className="image-date">{formatDate(image.created_at)}</span>
+              {image.ocr_processed && (
+                <span className="ocr-badge" title="OCR processed">📝</span>
+              )}
               <button 
                 className="delete-image-btn"
                 onClick={(e) => {
@@ -156,6 +208,69 @@ const ResourceImages: React.FC<ResourceImagesProps> = ({ resourceId }) => {
               {selectedImage.notes && (
                 <p><strong>Notes:</strong> {selectedImage.notes}</p>
               )}
+              
+              {selectedImage.ocr_processed && (
+                <div className="ocr-result">
+                  <p><strong>📝 Recognized Elements:</strong></p>
+                  
+                  {loadingElements && (
+                    <p className="ocr-status">Loading elements...</p>
+                  )}
+                  
+                  {!loadingElements && ocrElements.length > 0 && (
+                    <div className="ocr-elements">
+                      {/* Group by element type */}
+                      {['kanji', 'vocabulary', 'hiragana', 'katakana'].map(type => {
+                        const elementsOfType = ocrElements.filter(e => e.element_type === type);
+                        if (elementsOfType.length === 0) return null;
+                        
+                        return (
+                          <div key={type} className="element-group">
+                            <h4 className="element-type-header">
+                              {type === 'kanji' && '🈁 Kanji'}
+                              {type === 'vocabulary' && '📖 Vocabulary'}
+                              {type === 'hiragana' && 'あ Hiragana'}
+                              {type === 'katakana' && 'ア Katakana'}
+                            </h4>
+                            <div className="element-chips">
+                              {elementsOfType.map((element, idx) => (
+                                <span 
+                                  key={`${element.id}-${idx}`} 
+                                  className={`element-chip ${element.item_id ? 'matched' : 'unmatched'}`}
+                                  title={element.item_id ? 'Click to view details' : 'Not in dictionary'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedElement(element);
+                                  }}
+                                >
+                                  {element.text}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Raw text at the bottom */}
+                      {selectedImage.ocr_raw_text && (
+                        <details className="raw-text-details">
+                          <summary>View Raw Text</summary>
+                          <div className="ocr-text">{selectedImage.ocr_raw_text}</div>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                  
+                  {!loadingElements && ocrElements.length === 0 && (
+                    <p className="ocr-status">No text elements found</p>
+                  )}
+                </div>
+              )}
+              
+              {!selectedImage.ocr_processed && (
+                <p className="ocr-status">⏳ OCR processing in progress...</p>
+              )}
+              
               <button 
                 className="modal-delete-btn"
                 onClick={() => handleDelete(selectedImage.id)}
@@ -165,6 +280,17 @@ const ResourceImages: React.FC<ResourceImagesProps> = ({ resourceId }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Knowledge Sidebar */}
+      {selectedElement && (
+        <KnowledgeSidebar
+          elementId={selectedElement.id}
+          text={selectedElement.text}
+          elementType={selectedElement.element_type}
+          itemId={selectedElement.item_id}
+          onClose={() => setSelectedElement(null)}
+        />
       )}
     </div>
   );
