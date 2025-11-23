@@ -1,6 +1,7 @@
 import express, { Application } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import kanjiRoutes from './routes/kanji';
 import wordsRoutes from './routes/words';
 import authRoutes from './routes/auth';
@@ -14,10 +15,18 @@ dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
+const USE_GCS = process.env.USE_GCS === 'true';
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from uploads directory if using local storage
+if (!USE_GCS) {
+  const uploadsPath = path.join(__dirname, '../uploads');
+  app.use('/uploads', express.static(uploadsPath));
+  console.log(`Serving local uploads from: ${uploadsPath}`);
+}
 
 // Public routes
 app.use('/api/auth', authRoutes);

@@ -47,15 +47,20 @@ router.post('/signup', async (req: Request, res: Response) => {
     const verification_token = generateToken();
     const verification_token_expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
+    // In development mode, auto-verify emails if email service is not configured
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    const hasEmailService = !!process.env.RESEND_API_KEY;
+    const autoVerify = isDevelopment && !hasEmailService;
+
     // Create user
     const user = await prisma.users.create({
       data: {
         username,
         email,
         password_hash,
-        verification_token,
-        verification_token_expiry,
-        email_verified: false,
+        verification_token: autoVerify ? null : verification_token,
+        verification_token_expiry: autoVerify ? null : verification_token_expiry,
+        email_verified: autoVerify, // Auto-verify in dev mode without email service
         twofa_enabled: false,
       },
       select: {
@@ -67,16 +72,22 @@ router.post('/signup', async (req: Request, res: Response) => {
       },
     });
 
-    // Send verification email
-    try {
-      await sendVerificationEmail(email, username, verification_token);
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail registration if email fails to send
+    // Send verification email only if email service is configured
+    if (!autoVerify) {
+      try {
+        await sendVerificationEmail(email, username, verification_token);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+        // Don't fail registration if email fails to send
+      }
+    } else {
+      console.log(`[DEV] User ${username} auto-verified (email service not configured)`);
     }
 
     res.status(201).json({
-      message: 'Registration successful. Please check your email to verify your account.',
+      message: autoVerify 
+        ? 'Registration successful. You can now log in.' 
+        : 'Registration successful. Please check your email to verify your account.',
       user: {
         id: user.id,
         username: user.username,

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { audioUpload, uploadAudioToGCS } from '../config/audioUpload';
+import { audioUpload, uploadAudioToStorage } from '../config/audioUpload';
 
 const router = Router();
 
@@ -33,8 +33,8 @@ router.post('/', audioUpload.single('audio'), async (req: Request, res: Response
       return res.status(404).json({ error: 'Dictionary entry not found' });
     }
 
-    // Upload audio to GCS and get public URL
-    const audioPath = await uploadAudioToGCS(req.file, userId);
+    // Upload audio to storage and get URL
+    const audioPath = await uploadAudioToStorage(req.file, userId);
 
     // Create pronunciation recording
     const recording = await prisma.pronunciation_recordings.create({
@@ -222,7 +222,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Recording not found' });
     }
 
-    // Note: Files in GCS will be managed by bucket lifecycle rules
+    // Note: Files in cloud storage are managed by lifecycle rules; local files remain on disk
     // Delete from database
     await prisma.pronunciation_recordings.delete({
       where: { id: recordingId }
