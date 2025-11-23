@@ -1,0 +1,7 @@
+flask
+manga-ocr
+fugashi
+ipadic
+Pillow
+torch
+transformers

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# Start OCR Service
+
+echo "Starting Japanese OCR Service..."
+
+# Check if virtual environment exists
+if [ ! -d "venv" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv venv
+fi
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+echo "Installing dependencies..."
+pip install -r requirements.txt
+
+# Start the service
+echo "Starting OCR service on port 5001..."
+python3 app.py
+

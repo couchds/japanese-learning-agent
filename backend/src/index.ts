@@ -9,6 +9,10 @@ import resourcesRoutes from './routes/resources';
 import recognizeRoutes from './routes/recognize';
 import transcriptionRoutes from './routes/transcription';
 import pronunciationsRoutes from './routes/pronunciations';
+import resourceImagesRoutes from './routes/resourceImages';
+import ocrRoutes from './routes/ocr';
+import userKnowledgeRoutes from './routes/userKnowledge';
+import dashboardRoutes from './routes/dashboard';
 import { authenticateToken } from './middleware/auth';
 
 dotenv.config();
@@ -38,6 +42,10 @@ app.use('/api/resources', authenticateToken, resourcesRoutes);
 app.use('/api/recognize', authenticateToken, recognizeRoutes);
 app.use('/api/transcribe', authenticateToken, transcriptionRoutes);
 app.use('/api/pronunciations', authenticateToken, pronunciationsRoutes);
+app.use('/api/resource-images', authenticateToken, resourceImagesRoutes);
+app.use('/api/ocr', authenticateToken, ocrRoutes);
+app.use('/api/user-knowledge', authenticateToken, userKnowledgeRoutes);
+app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

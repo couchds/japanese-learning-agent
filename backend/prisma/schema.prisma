@@ -130,21 +130,22 @@ model kanji_meanings {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model resources {
-  id               Int              @id @default(autoincrement())
+  id               Int                @id @default(autoincrement())
   user_id          Int
-  name             String           @db.VarChar(500)
-  type             String           @db.VarChar(50)
-  status           String           @default("not_started") @db.VarChar(50)
+  name             String             @db.VarChar(500)
+  type             String             @db.VarChar(50)
+  status           String             @default("not_started") @db.VarChar(50)
   description      String?
-  image_path       String?          @db.VarChar(1000)
-  difficulty_level String?          @db.VarChar(50)
+  image_path       String?            @db.VarChar(1000)
+  difficulty_level String?            @db.VarChar(50)
   tags             String[]
-  created_at       DateTime?        @default(now()) @db.Timestamp(6)
-  updated_at       DateTime?        @default(now()) @db.Timestamp(6)
-  users            users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at       DateTime?          @default(now()) @db.Timestamp(6)
+  updated_at       DateTime?          @default(now()) @db.Timestamp(6)
+  users            users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   resource_kanji   resource_kanji[]
   resource_words   resource_words[]
   custom_vocabulary custom_vocabulary[]
+  resource_images  resource_images[]
 
   @@index([difficulty_level], map: "idx_resources_difficulty")
   @@index([status], map: "idx_resources_status")
@@ -180,6 +181,8 @@ model users {
   resources                 resources[]
   pronunciation_recordings  pronunciation_recordings[]
   twofa_codes               twofa_codes[]
+  resource_images           resource_images[]
+  user_knowledge            user_knowledge[]
 
   @@index([email], map: "idx_users_email")
   @@index([username], map: "idx_users_username")
@@ -264,4 +267,65 @@ model twofa_codes {
   @@index([user_id], map: "idx_twofa_codes_user_id")
   @@index([code], map: "idx_twofa_codes_code")
   @@index([expires_at], map: "idx_twofa_codes_expires_at")
+}
+
+model resource_images {
+  id            Int            @id @default(autoincrement())
+  resource_id   Int
+  user_id       Int
+  image_path    String         @db.VarChar(1000)
+  notes         String?
+  ocr_processed Boolean        @default(false)
+  ocr_raw_text  String?        @db.Text // Full raw OCR output for reference
+  created_at    DateTime?      @default(now()) @db.Timestamp(6)
+  resources     resources      @relation(fields: [resource_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ocr_elements  ocr_elements[]
+
+  @@index([resource_id], map: "idx_resource_images_resource_id")
+  @@index([user_id], map: "idx_resource_images_user_id")
+  @@index([created_at], map: "idx_resource_images_created_at")
+  @@index([ocr_processed], map: "idx_resource_images_ocr_processed")
+}
+
+model ocr_elements {
+  id               Int             @id @default(autoincrement())
+  resource_image_id Int
+  text             String          @db.VarChar(500) // The recognized text
+  element_type     String          @db.VarChar(50) // 'kanji', 'vocabulary', 'hiragana', 'katakana', 'unknown'
+  item_id          Int?            // References kanji.id, dictionary_entries.id, etc. (null if not matched)
+  confidence       Float?          // OCR confidence score (0.0-1.0)
+  position_x       Int?            // Bounding box coordinates (optional)
+  position_y       Int?
+  width            Int?
+  height           Int?
+  created_at       DateTime?       @default(now()) @db.Timestamp(6)
+  resource_images  resource_images @relation(fields: [resource_image_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([resource_image_id], map: "idx_ocr_elements_image_id")
+  @@index([element_type, item_id], map: "idx_ocr_elements_type_item")
+  @@index([text], map: "idx_ocr_elements_text")
+}
+
+model user_knowledge {
+  id                Int       @id @default(autoincrement())
+  user_id           Int
+  item_type         String    @db.VarChar(50) // 'kanji', 'vocabulary', 'grammar', 'hiragana', 'katakana', etc.
+  item_id           Int       // ID of the item (kanji_id, entry_id, etc.)
+  proficiency_level Int       @default(0) // 0-5: 0=unknown, 1=learning, 2=familiar, 3=known, 4=mastered, 5=native
+  review_count      Int       @default(0)
+  correct_count     Int       @default(0)
+  incorrect_count   Int       @default(0)
+  last_reviewed     DateTime? @db.Timestamp(6)
+  next_review       DateTime? @db.Timestamp(6) // For SRS
+  notes             String?
+  created_at        DateTime? @default(now()) @db.Timestamp(6)
+  updated_at        DateTime? @default(now()) @db.Timestamp(6)
+  users             users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, item_type, item_id], map: "unique_user_item")
+  @@index([user_id], map: "idx_user_knowledge_user_id")
+  @@index([item_type, item_id], map: "idx_user_knowledge_item")
+  @@index([proficiency_level], map: "idx_user_knowledge_proficiency")
+  @@index([next_review], map: "idx_user_knowledge_next_review")
 }

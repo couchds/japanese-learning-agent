@@ -1,0 +1,38 @@
+# PyInstaller build artifacts
+build/
+dist/
+*.spec
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# User config
+.japanese-learning-screenshot-config.json
+.yomunami-ocr-config.json
+
+# Icons (if you add custom ones)
+icon.ico
+icon.icns
+
+# Screenshots (local testing)
+screenshots/
+

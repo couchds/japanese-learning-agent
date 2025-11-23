@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
 import Kanji from './pages/Kanji';
 import KanjiDraw from './pages/KanjiDraw';
 import Words from './pages/Words';
@@ -30,6 +31,7 @@ function App() {
           {/* Protected routes */}
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Home />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="words" element={<Words />} />
             <Route path="kanji" element={<Kanji />} />
             <Route path="kanji-draw" element={<KanjiDraw />} />

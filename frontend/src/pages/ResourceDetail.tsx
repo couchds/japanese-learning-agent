@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import * as wanakana from 'wanakana';
+import ResourceImages from '../components/ResourceImages';
 import './ResourceDetail.css';
 
 interface EntryKanji {
@@ -456,6 +457,9 @@ const ResourceDetail: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* OCR Screenshots Section */}
+      <ResourceImages resourceId={resource.id} />
 
       <div className="vocabulary-section">
         <div className="tabs-container">
