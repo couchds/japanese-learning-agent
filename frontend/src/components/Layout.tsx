@@ -23,6 +23,9 @@ const Layout: React.FC = () => {
             <li>
               <Link to="/">Home</Link>
             </li>
+            <li>
+              <Link to="/dashboard">📊 Dashboard</Link>
+            </li>
             <li className="expandable-item">
               <div className="expandable-header" onClick={toggleDictionary}>
                 <span>Dictionary</span>

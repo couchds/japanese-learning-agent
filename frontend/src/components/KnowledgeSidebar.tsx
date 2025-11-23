@@ -42,7 +42,7 @@ const KnowledgeSidebar: React.FC<KnowledgeSidebarProps> = ({
   const [itemDetails, setItemDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState(0);
+  const [selectedLevel, setSelectedLevel] = useState(1); // Default to "Learning" instead of "Unknown"
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
