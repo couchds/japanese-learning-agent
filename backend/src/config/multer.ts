@@ -64,34 +64,34 @@ export const upload = multer({
 export const uploadToStorage = async (file: Express.Multer.File, userId: number | string): Promise<string> => {
   if (USE_GCS) {
     // Upload to GCS
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    const nameWithoutExt = path.basename(file.originalname, ext);
-    const filename = `uploads/${userId}-${uniqueSuffix}-${nameWithoutExt}${ext}`;
-    
-    const blob = bucket.file(filename);
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-      metadata: {
-        contentType: file.mimetype,
-      },
-    });
+  const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+  const ext = path.extname(file.originalname);
+  const nameWithoutExt = path.basename(file.originalname, ext);
+  const filename = `uploads/${userId}-${uniqueSuffix}-${nameWithoutExt}${ext}`;
+  
+  const blob = bucket.file(filename);
+  const blobStream = blob.createWriteStream({
+    resumable: false,
+    metadata: {
+      contentType: file.mimetype,
+    },
+  });
 
-    return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
       blobStream.on('error', (err: Error) => {
-        reject(err);
-      });
-
-      blobStream.on('finish', () => {
-        // Make the file publicly accessible
-        blob.makePublic().then(() => {
-          const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
-          resolve(publicUrl);
-        }).catch(reject);
-      });
-
-      blobStream.end(file.buffer);
+      reject(err);
     });
+
+    blobStream.on('finish', () => {
+      // Make the file publicly accessible
+      blob.makePublic().then(() => {
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+        resolve(publicUrl);
+      }).catch(reject);
+    });
+
+    blobStream.end(file.buffer);
+  });
   } else {
     // File is already saved locally by multer diskStorage
     // Return relative URL path

@@ -183,6 +183,7 @@ model users {
   twofa_codes               twofa_codes[]
   resource_images           resource_images[]
   user_knowledge            user_knowledge[]
+  ocr_composite             ocr_composite[]
 
   @@index([email], map: "idx_users_email")
   @@index([username], map: "idx_users_username")
@@ -270,17 +271,18 @@ model twofa_codes {
 }
 
 model resource_images {
-  id            Int            @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   resource_id   Int
   user_id       Int
-  image_path    String         @db.VarChar(1000)
+  image_path    String          @db.VarChar(1000)
   notes         String?
-  ocr_processed Boolean        @default(false)
-  ocr_raw_text  String?        @db.Text // Full raw OCR output for reference
-  created_at    DateTime?      @default(now()) @db.Timestamp(6)
-  resources     resources      @relation(fields: [resource_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  users         users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ocr_processed Boolean         @default(false)
+  ocr_raw_text  String?         @db.Text // Full raw OCR output for reference
+  created_at    DateTime?       @default(now()) @db.Timestamp(6)
+  resources     resources       @relation(fields: [resource_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users         users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ocr_elements  ocr_elements[]
+  ocr_composite ocr_composite[]
 
   @@index([resource_id], map: "idx_resource_images_resource_id")
   @@index([user_id], map: "idx_resource_images_user_id")
@@ -299,12 +301,40 @@ model ocr_elements {
   position_y       Int?
   width            Int?
   height           Int?
+  composite_id     Int?            // Links to ocr_composite if part of a dialogue
   created_at       DateTime?       @default(now()) @db.Timestamp(6)
   resource_images  resource_images @relation(fields: [resource_image_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ocr_composite    ocr_composite?  @relation(fields: [composite_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([resource_image_id], map: "idx_ocr_elements_image_id")
   @@index([element_type, item_id], map: "idx_ocr_elements_type_item")
   @@index([text], map: "idx_ocr_elements_text")
+  @@index([composite_id], map: "idx_ocr_elements_composite_id")
+}
+
+model ocr_composite {
+  id                  Int              @id @default(autoincrement())
+  resource_image_id   Int
+  user_id             Int
+  previous_composite_id Int?           // Link to previous composite in dialogue sequence
+  dialogue_text       String           @db.Text // Combined text from all OCR elements
+  translation         String?          @db.Text // OpenAI full translation
+  breakdown           Json?            // Sentence breakdown (array of {word, reading, meaning})
+  grammar_notes       String?          @db.Text // Grammar explanations
+  context_notes       String?          @db.Text // Cultural/contextual notes
+  processed           Boolean          @default(false) // Whether OpenAI analysis is complete
+  created_at          DateTime?        @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?        @default(now()) @db.Timestamp(6)
+  resource_images     resource_images  @relation(fields: [resource_image_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users               users            @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  previous_composite  ocr_composite?   @relation("DialogueSequence", fields: [previous_composite_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  next_composites     ocr_composite[]  @relation("DialogueSequence")
+  ocr_elements        ocr_elements[]
+
+  @@index([resource_image_id], map: "idx_ocr_composite_image_id")
+  @@index([user_id], map: "idx_ocr_composite_user_id")
+  @@index([processed], map: "idx_ocr_composite_processed")
+  @@index([previous_composite_id], map: "idx_ocr_composite_previous")
 }
 
 model user_knowledge {

@@ -73,33 +73,33 @@ export const audioUpload = multer({
 export const uploadAudioToStorage = async (file: Express.Multer.File, userId: number | string): Promise<string> => {
   if (USE_GCS) {
     // Upload to GCS
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
-    const filename = `pronunciations/${userId}-${timestamp}${ext}`;
-    
-    const blob = bucket.file(filename);
-    const blobStream = blob.createWriteStream({
-      resumable: false,
-      metadata: {
-        contentType: file.mimetype,
-      },
-    });
+  const timestamp = Date.now();
+  const ext = path.extname(file.originalname);
+  const filename = `pronunciations/${userId}-${timestamp}${ext}`;
+  
+  const blob = bucket.file(filename);
+  const blobStream = blob.createWriteStream({
+    resumable: false,
+    metadata: {
+      contentType: file.mimetype,
+    },
+  });
 
-    return new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
       blobStream.on('error', (err: Error) => {
-        reject(err);
-      });
-
-      blobStream.on('finish', () => {
-        // Make the file publicly accessible
-        blob.makePublic().then(() => {
-          const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
-          resolve(publicUrl);
-        }).catch(reject);
-      });
-
-      blobStream.end(file.buffer);
+      reject(err);
     });
+
+    blobStream.on('finish', () => {
+      // Make the file publicly accessible
+      blob.makePublic().then(() => {
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+        resolve(publicUrl);
+      }).catch(reject);
+    });
+
+    blobStream.end(file.buffer);
+  });
   } else {
     // File is already saved locally by multer diskStorage
     // Return relative URL path

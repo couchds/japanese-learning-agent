@@ -190,16 +190,18 @@
 /* Items Grid */
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
 }
 
 .item-card {
-  background: #f9f9f9;
+  background: white;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
-  padding: 16px;
+  padding: 20px;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
 }
 
 .item-card:hover {
@@ -209,18 +211,21 @@
 }
 
 .item-card-text {
-  margin-bottom: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .item-type-badge {
   display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 10px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  align-self: flex-start;
 }
 
 .item-type-badge.kanji {
@@ -235,10 +240,10 @@
 
 .item-main {
   font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
-  font-size: 32px;
+  font-size: 36px;
   font-weight: bold;
   color: #333;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   line-height: 1.2;
 }
 
@@ -246,14 +251,15 @@
   font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
   font-size: 16px;
   color: #666;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 
 .item-meaning {
-  font-size: 13px;
+  font-size: 14px;
   color: #888;
-  line-height: 1.4;
-  min-height: 36px;
+  line-height: 1.5;
+  min-height: 42px;
+  margin-bottom: auto;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -262,14 +268,18 @@
 
 .item-stats {
   display: flex;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 16px;
   padding-top: 12px;
+  margin-top: 8px;
   border-top: 1px solid #e0e0e0;
 }
 
 .stat {
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
   color: #666;
 }
 

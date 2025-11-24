@@ -13,12 +13,13 @@ import resourceImagesRoutes from './routes/resourceImages';
 import ocrRoutes from './routes/ocr';
 import userKnowledgeRoutes from './routes/userKnowledge';
 import dashboardRoutes from './routes/dashboard';
+import compositeRoutes from './routes/composite';
 import { authenticateToken } from './middleware/auth';
 
 dotenv.config();
 
 const app: Application = express();
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 const USE_GCS = process.env.USE_GCS === 'true';
 
 // Middleware
@@ -46,6 +47,7 @@ app.use('/api/resource-images', authenticateToken, resourceImagesRoutes);
 app.use('/api/ocr', authenticateToken, ocrRoutes);
 app.use('/api/user-knowledge', authenticateToken, userKnowledgeRoutes);
 app.use('/api/dashboard', authenticateToken, dashboardRoutes);
+app.use('/api/composite', authenticateToken, compositeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -53,7 +55,7 @@ app.get('/health', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
 });
 

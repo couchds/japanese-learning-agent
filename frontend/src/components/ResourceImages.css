@@ -299,3 +299,287 @@
   margin-bottom: 20px;
 }
 
+/* Edit/Delete Chip Controls */
+.element-chip-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-chip-btn,
+.delete-chip-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.edit-chip-btn:hover,
+.delete-chip-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.edit-chip-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-chip-input {
+  font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 16px;
+  padding: 6px 10px;
+  border: 2px solid #1976d2;
+  border-radius: 8px;
+  min-width: 60px;
+  outline: none;
+}
+
+.edit-chip-save,
+.edit-chip-cancel {
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.edit-chip-save:hover {
+  background: #1565c0;
+}
+
+.edit-chip-cancel {
+  background: #999;
+}
+
+.edit-chip-cancel:hover {
+  background: #777;
+}
+
+/* Add Element Section */
+.add-element-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.add-element-btn {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-element-btn:hover {
+  background: #45a049;
+  transform: translateY(-1px);
+}
+
+.add-element-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-element-input {
+  font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 16px;
+  padding: 10px 15px;
+  border: 2px solid #4caf50;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 200px;
+  outline: none;
+}
+
+.add-element-input::placeholder {
+  color: #999;
+}
+
+.add-element-save,
+.add-element-cancel {
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.add-element-save:hover {
+  background: #45a049;
+}
+
+.add-element-cancel {
+  background: #999;
+}
+
+.add-element-cancel:hover {
+  background: #777;
+}
+
+/* Analyze Dialogue Styles */
+.analyze-dialogue-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.start-analyze-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.start-analyze-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.selection-mode-controls {
+  background: #f0f4ff;
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px dashed #667eea;
+}
+
+.selection-hint {
+  margin: 0 0 16px 0;
+  color: #667eea;
+  font-weight: 600;
+  text-align: center;
+}
+
+.selection-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.analyze-btn {
+  flex: 1;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.analyze-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.analyze-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-selection-btn {
+  background: #999;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-selection-btn:hover {
+  background: #777;
+}
+
+.element-chip.selected {
+  background: #667eea !important;
+  color: white !important;
+  border-color: #667eea !important;
+  transform: scale(1.05);
+}
+
+/* Composites Section */
+.composites-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 2px solid #e0e0e0;
+}
+
+.composites-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.composites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.composite-preview {
+  background: linear-gradient(135deg, #f5f7ff 0%, #e8edff 100%);
+  border: 2px solid #d0daf5;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.composite-preview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  border-color: #667eea;
+}
+
+.composite-text {
+  font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.composite-translation {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.composite-date {
+  font-size: 12px;
+  color: #999;
+}
+

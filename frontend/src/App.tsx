@@ -10,6 +10,7 @@ import KanjiDraw from './pages/KanjiDraw';
 import Words from './pages/Words';
 import Resources from './pages/Resources';
 import ResourceDetail from './pages/ResourceDetail';
+import ImageDetail from './pages/ImageDetail';
 import Training from './pages/Training';
 import PronunciationTraining from './pages/PronunciationTraining';
 import TestModel from './pages/TestModel';
@@ -39,6 +40,7 @@ function App() {
             <Route path="test-model" element={<TestModel />} />
             <Route path="resources" element={<Resources />} />
             <Route path="resources/:id" element={<ResourceDetail />} />
+            <Route path="images/:imageId" element={<ImageDetail />} />
             <Route path="resources/:id/train/kanji" element={<Training />} />
             <Route path="resources/:id/train/speech" element={<Training />} />
           </Route>

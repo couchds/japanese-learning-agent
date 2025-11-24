@@ -202,6 +202,220 @@ router.get('/elements/:imageId', async (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/ocr/elements/:id - Update an OCR element's text
+router.patch('/elements/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const elementId = parseInt(req.params.id);
+    const { text } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (isNaN(elementId) || !text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Invalid element ID or text' });
+    }
+
+    // Get the OCR element and verify ownership
+    const element = await prisma.ocr_elements.findFirst({
+      where: { id: elementId },
+      include: {
+        resource_images: {
+          select: { user_id: true },
+        },
+      },
+    });
+
+    if (!element || element.resource_images.user_id !== userId) {
+      return res.status(404).json({ error: 'OCR element not found' });
+    }
+
+    // Re-match the new text to kanji/vocabulary
+    let itemType = 'unknown';
+    let itemId: number | null = null;
+
+    // Try to match as kanji
+    if (text.length === 1) {
+      const kanji = await prisma.kanji.findFirst({
+        where: { literal: text },
+      });
+      if (kanji) {
+        itemType = 'kanji';
+        itemId = kanji.id;
+      }
+    }
+
+    // Try to match as vocabulary
+    if (!itemId) {
+      const vocabEntry = await prisma.dictionary_entries.findFirst({
+        where: {
+          OR: [
+            { entry_kanji: { some: { kanji: text } } },
+            { entry_readings: { some: { reading: text } } },
+          ],
+        },
+      });
+      if (vocabEntry) {
+        itemType = 'vocabulary';
+        itemId = vocabEntry.id;
+      }
+    }
+
+    // Determine element type based on text
+    if (!itemId) {
+      const hasKanji = /[\u4e00-\u9faf]/.test(text);
+      const hasHiragana = /[\u3040-\u309f]/.test(text);
+      const hasKatakana = /[\u30a0-\u30ff]/.test(text);
+
+      if (hasKanji) itemType = 'kanji';
+      else if (hasHiragana) itemType = 'hiragana';
+      else if (hasKatakana) itemType = 'katakana';
+    }
+
+    // Update the element
+    const updated = await prisma.ocr_elements.update({
+      where: { id: elementId },
+      data: {
+        text,
+        element_type: itemType,
+        item_id: itemId,
+      },
+    });
+
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating OCR element:', error);
+    res.status(500).json({ error: 'Failed to update OCR element' });
+  }
+});
+
+// DELETE /api/ocr/elements/:id - Delete an OCR element
+router.delete('/elements/:id', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const elementId = parseInt(req.params.id);
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (isNaN(elementId)) {
+      return res.status(400).json({ error: 'Invalid element ID' });
+    }
+
+    // Get the OCR element and verify ownership
+    const element = await prisma.ocr_elements.findFirst({
+      where: { id: elementId },
+      include: {
+        resource_images: {
+          select: { user_id: true },
+        },
+      },
+    });
+
+    if (!element || element.resource_images.user_id !== userId) {
+      return res.status(404).json({ error: 'OCR element not found' });
+    }
+
+    // Delete the element
+    await prisma.ocr_elements.delete({
+      where: { id: elementId },
+    });
+
+    res.json({ success: true, message: 'OCR element deleted' });
+  } catch (error) {
+    console.error('Error deleting OCR element:', error);
+    res.status(500).json({ error: 'Failed to delete OCR element' });
+  }
+});
+
+// POST /api/ocr/elements - Create a new OCR element manually
+router.post('/elements', async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { resource_image_id, text } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (!resource_image_id || !text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Invalid resource_image_id or text' });
+    }
+
+    // Verify the resource image exists and user owns it
+    const resourceImage = await prisma.resource_images.findFirst({
+      where: {
+        id: resource_image_id,
+        user_id: userId,
+      },
+    });
+
+    if (!resourceImage) {
+      return res.status(404).json({ error: 'Resource image not found' });
+    }
+
+    // Match the text to kanji/vocabulary
+    let itemType = 'unknown';
+    let itemId: number | null = null;
+
+    // Try to match as kanji
+    if (text.length === 1) {
+      const kanji = await prisma.kanji.findFirst({
+        where: { literal: text },
+      });
+      if (kanji) {
+        itemType = 'kanji';
+        itemId = kanji.id;
+      }
+    }
+
+    // Try to match as vocabulary
+    if (!itemId) {
+      const vocabEntry = await prisma.dictionary_entries.findFirst({
+        where: {
+          OR: [
+            { entry_kanji: { some: { kanji: text } } },
+            { entry_readings: { some: { reading: text } } },
+          ],
+        },
+      });
+      if (vocabEntry) {
+        itemType = 'vocabulary';
+        itemId = vocabEntry.id;
+      }
+    }
+
+    // Determine element type based on text
+    if (!itemId) {
+      const hasKanji = /[\u4e00-\u9faf]/.test(text);
+      const hasHiragana = /[\u3040-\u309f]/.test(text);
+      const hasKatakana = /[\u30a0-\u30ff]/.test(text);
+
+      if (hasKanji) itemType = 'kanji';
+      else if (hasHiragana) itemType = 'hiragana';
+      else if (hasKatakana) itemType = 'katakana';
+    }
+
+    // Create the element
+    const newElement = await prisma.ocr_elements.create({
+      data: {
+        resource_image_id,
+        text,
+        element_type: itemType,
+        item_id: itemId,
+        confidence: 1.0, // Manual entry = 100% confidence
+      },
+    });
+
+    res.status(201).json(newElement);
+  } catch (error) {
+    console.error('Error creating OCR element:', error);
+    res.status(500).json({ error: 'Failed to create OCR element' });
+  }
+});
+
 // GET /api/ocr/health - Check OCR service health
 router.get('/health', async (req: Request, res: Response) => {
   try {
